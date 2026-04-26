@@ -1,0 +1,1851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartPark AI — Intelligent Parking Management</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cyan: #00f5d4; --cyan-dim: #00c4aa; --electric: #7c3aed; --electric-glow: #a78bfa;
+  --gold: #f59e0b; --bg: #050b14; --bg2: #0a1628; --bg3: #0f1f3a;
+  --surface: #112240; --surface2: #1a2f50; --text: #e2e8f0; --text-muted: #8898aa;
+  --text-dim: #4a5568; --border: rgba(0,245,212,0.12); --border-hover: rgba(0,245,212,0.3);
+  --red: #ef4444; --green: #22c55e; --orange: #f97316;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;line-height:1.6;}
+::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:var(--bg);}::-webkit-scrollbar-thumb{background:var(--cyan-dim);border-radius:2px;}
+
+/* ── NOISE ── */
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:0.4;}
+.grid-bg{position:absolute;inset:0;background-image:linear-gradient(rgba(0,245,212,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,245,212,0.03) 1px,transparent 1px);background-size:60px 60px;pointer-events:none;}
+
+/* ── OVERLAY PAGES ── */
+.page-overlay{display:none;position:fixed;inset:0;z-index:200;background:var(--bg);overflow-y:auto;}
+.page-overlay.active{display:block;}
+
+/* ── NAV ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:1rem 3rem;background:rgba(5,11,20,0.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.4rem;color:var(--cyan);letter-spacing:-0.02em;display:flex;align-items:center;gap:0.5rem;cursor:pointer;}
+.logo-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--cyan),var(--electric));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.nav-links{display:flex;gap:2rem;align-items:center;}
+.nav-links a{font-size:0.75rem;color:var(--text-muted);text-decoration:none;font-weight:500;letter-spacing:0.02em;transition:color 0.2s;text-transform:uppercase;cursor:pointer;}
+.nav-links a:hover{color:var(--cyan);}
+.nav-cta{padding:0.5rem 1.25rem;background:var(--cyan);color:var(--bg)!important;border-radius:6px;font-weight:600!important;}
+.nav-cta:hover{background:var(--cyan-dim)!important;}
+.nav-user{display:flex;align-items:center;gap:0.75rem;}
+.nav-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--electric),var(--cyan-dim));display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:white;cursor:pointer;}
+.nav-username{font-size:0.8rem;color:var(--text-muted);}
+
+/* ── HERO ── */
+.hero{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:8rem 2rem 4rem;overflow:hidden;}
+.hero-orb{position:absolute;border-radius:50%;filter:blur(80px);pointer-events:none;}
+.orb1{width:500px;height:500px;background:rgba(0,245,212,0.08);top:-100px;left:-100px;}
+.orb2{width:400px;height:400px;background:rgba(124,58,237,0.1);bottom:0;right:-50px;}
+.orb3{width:300px;height:300px;background:rgba(245,158,11,0.06);top:50%;left:50%;transform:translate(-50%,-50%);}
+.hero-badge{display:inline-flex;align-items:center;gap:0.5rem;background:rgba(0,245,212,0.08);border:1px solid rgba(0,245,212,0.2);border-radius:100px;padding:0.35rem 1rem;font-size:0.75rem;color:var(--cyan);font-family:'JetBrains Mono',monospace;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:2rem;animation:fadeInDown 0.8s ease;}
+.badge-dot{width:6px;height:6px;background:var(--cyan);border-radius:50%;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(1.5)}}
+.hero h1{font-family:'Syne',sans-serif;font-size:clamp(2.5rem,7vw,5.5rem);font-weight:800;line-height:1.0;letter-spacing:-0.03em;margin-bottom:1.5rem;animation:fadeInUp 0.8s ease 0.1s both;}
+.gradient-text{background:linear-gradient(135deg,var(--cyan) 0%,var(--electric-glow) 50%,var(--gold) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.hero p{max-width:560px;margin:0 auto 2.5rem;font-size:1.125rem;color:var(--text-muted);line-height:1.7;animation:fadeInUp 0.8s ease 0.2s both;}
+.hero-buttons{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;animation:fadeInUp 0.8s ease 0.3s both;}
+@keyframes fadeInDown{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── CAR SVG STRIP ── */
+.car-strip{position:absolute;bottom:0;left:0;right:0;height:140px;overflow:hidden;pointer-events:none;}
+.car-track{display:flex;gap:0;width:200%;animation:carScroll 18s linear infinite;}
+.car-track-rev{display:flex;gap:0;width:200%;animation:carScrollRev 22s linear infinite;margin-top:8px;}
+@keyframes carScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes carScrollRev{from{transform:translateX(-50%)}to{transform:translateX(0)}}
+
+/* ── STATS ── */
+.stats-bar{display:flex;gap:0;justify-content:center;border:1px solid var(--border);border-radius:12px;background:var(--bg2);max-width:750px;margin:4rem auto 0;overflow:hidden;animation:fadeInUp 0.8s ease 0.4s both;}
+.stat-item{flex:1;padding:1.5rem;border-right:1px solid var(--border);text-align:center;}
+.stat-item:last-child{border-right:none;}
+.stat-num{font-family:'Syne',sans-serif;font-size:1.75rem;font-weight:800;color:var(--cyan);display:block;}
+.stat-label{font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;}
+
+/* ── BUTTONS ── */
+.btn-primary{padding:0.875rem 2rem;background:linear-gradient(135deg,var(--cyan),var(--cyan-dim));color:var(--bg);border:none;border-radius:8px;font-weight:700;font-size:0.9rem;cursor:pointer;text-decoration:none;font-family:'DM Sans',sans-serif;transition:transform 0.2s,box-shadow 0.2s;letter-spacing:0.02em;display:inline-block;}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 12px 40px rgba(0,245,212,0.3);}
+.btn-outline{padding:0.875rem 2rem;background:transparent;color:var(--text);border:1px solid var(--border-hover);border-radius:8px;font-weight:500;font-size:0.9rem;cursor:pointer;text-decoration:none;font-family:'DM Sans',sans-serif;transition:all 0.2s;display:inline-block;}
+.btn-outline:hover{border-color:var(--cyan);color:var(--cyan);background:rgba(0,245,212,0.05);}
+.btn-sm{padding:0.5rem 1rem;font-size:0.8rem;}
+
+/* ── SECTIONS ── */
+section{padding:6rem 2rem;position:relative;}
+.container{max-width:1200px;margin:0 auto;}
+.section-label{font-family:'JetBrains Mono',monospace;font-size:0.7rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--cyan);margin-bottom:0.75rem;}
+.section-title{font-family:'Syne',sans-serif;font-size:clamp(1.8rem,4vw,3rem);font-weight:800;letter-spacing:-0.02em;line-height:1.15;margin-bottom:1rem;}
+.section-sub{color:var(--text-muted);max-width:520px;line-height:1.7;}
+
+/* ── DASHBOARD ── */
+.dashboard-section{background:var(--bg2);}
+.dashboard-grid{display:grid;grid-template-columns:1fr 1.4fr;gap:2rem;margin-top:3rem;align-items:start;}
+.lot-map{background:var(--bg3);border:1px solid var(--border);border-radius:16px;padding:1.5rem;position:relative;}
+.lot-map-title{font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--cyan);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:1.25rem;display:flex;align-items:center;gap:0.5rem;}
+.live-dot{width:6px;height:6px;background:var(--green);border-radius:50%;animation:pulse 1.5s infinite;}
+.parking-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:5px;}
+.pspot{aspect-ratio:1;border-radius:4px;cursor:pointer;transition:transform 0.15s;position:relative;}
+.pspot:hover{transform:scale(1.1);z-index:2;}
+.pspot.free{background:rgba(34,197,94,0.2);border:1px solid rgba(34,197,94,0.4);}
+.pspot.occupied{background:rgba(239,68,68,0.25);border:1px solid rgba(239,68,68,0.5);}
+.pspot.reserved{background:rgba(245,158,11,0.2);border:1px solid rgba(245,158,11,0.4);}
+.pspot.ev{background:rgba(0,245,212,0.15);border:1px solid rgba(0,245,212,0.35);}
+.pspot.disabled{background:rgba(139,92,246,0.2);border:1px solid rgba(139,92,246,0.4);}
+.lot-legend{display:flex;gap:1rem;margin-top:1rem;flex-wrap:wrap;}
+.legend-item{display:flex;align-items:center;gap:0.35rem;font-size:0.7rem;color:var(--text-muted);}
+.legend-dot{width:8px;height:8px;border-radius:2px;}
+.dashboard-right{display:flex;flex-direction:column;gap:1.25rem;}
+.metric-card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:1.25rem 1.5rem;display:flex;align-items:center;justify-content:space-between;transition:border-color 0.3s;}
+.metric-card:hover{border-color:var(--border-hover);}
+.metric-info{display:flex;flex-direction:column;gap:0.2rem;}
+.metric-label{font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;}
+.metric-value{font-family:'Syne',sans-serif;font-size:1.75rem;font-weight:800;color:var(--text);}
+.metric-change{font-size:0.75rem;}
+.metric-change.up{color:var(--green);}.metric-change.down{color:var(--red);}
+.metric-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;}
+.icon-green{background:rgba(34,197,94,0.12);}.icon-red{background:rgba(239,68,68,0.12);}.icon-cyan{background:rgba(0,245,212,0.1);}.icon-gold{background:rgba(245,158,11,0.12);}
+.occ-bar-wrap{margin-top:0.5rem;}
+.occ-bar-track{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;}
+.occ-bar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--cyan),var(--electric-glow));transition:width 1s ease;}
+
+/* ── FEATURES ── */
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:3rem;}
+.feat-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:2rem;transition:all 0.3s;position:relative;overflow:hidden;}
+.feat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);opacity:0;transition:opacity 0.3s;}
+.feat-card:hover{border-color:var(--border-hover);transform:translateY(-4px);box-shadow:0 20px 60px rgba(0,0,0,0.3);}
+.feat-card:hover::before{opacity:1;}
+.feat-icon{width:52px;height:52px;border-radius:12px;background:rgba(0,245,212,0.08);border:1px solid rgba(0,245,212,0.15);display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin-bottom:1.25rem;}
+.feat-title{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;margin-bottom:0.6rem;}
+.feat-desc{font-size:0.875rem;color:var(--text-muted);line-height:1.65;}
+.feat-tag{display:inline-block;margin-top:1rem;padding:0.2rem 0.65rem;background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.3);border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--electric-glow);letter-spacing:0.05em;}
+
+/* ── TERMINAL ── */
+.terminal{background:#020810;border:1px solid rgba(0,245,212,0.2);border-radius:12px;overflow:hidden;font-family:'JetBrains Mono',monospace;}
+.terminal-bar{background:var(--surface);padding:0.75rem 1rem;display:flex;align-items:center;gap:0.5rem;border-bottom:1px solid rgba(0,245,212,0.1);}
+.t-dot{width:10px;height:10px;border-radius:50%;}
+.t-red{background:#ff5f57;}.t-yellow{background:#ffbd2e;}.t-green{background:#28ca40;}
+.terminal-title{font-size:0.7rem;color:var(--text-muted);margin-left:0.5rem;letter-spacing:0.05em;}
+.terminal-body{padding:1.5rem;min-height:280px;font-size:0.78rem;line-height:1.8;}
+.t-line{display:block;}.t-prompt{color:var(--cyan);}.t-cmd{color:var(--text);}.t-out{color:#64748b;}.t-val{color:var(--gold);}.t-good{color:var(--green);}.t-warn{color:var(--orange);}
+.t-cursor{display:inline-block;width:8px;height:14px;background:var(--cyan);animation:blink 1s infinite;vertical-align:middle;border-radius:1px;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* ── HOW IT WORKS ── */
+.hiw-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:4rem;position:relative;}
+.hiw-steps::before{content:'';position:absolute;top:32px;left:12%;right:12%;height:1px;background:linear-gradient(90deg,transparent,var(--border-hover),transparent);}
+.step-card{text-align:center;padding:1.5rem 1rem;}
+.step-num{width:64px;height:64px;border-radius:50%;background:var(--bg2);border:1px solid var(--border-hover);display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem;font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:var(--cyan);position:relative;z-index:1;}
+.step-title{font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;margin-bottom:0.5rem;}
+.step-desc{font-size:0.825rem;color:var(--text-muted);line-height:1.6;}
+
+/* ── PRICING ── */
+.pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:3rem;}
+.price-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:2rem;transition:all 0.3s;position:relative;}
+.price-card.featured{border-color:var(--cyan);background:linear-gradient(135deg,rgba(0,245,212,0.04),var(--bg2));}
+.price-card:hover{transform:translateY(-4px);box-shadow:0 20px 60px rgba(0,0,0,0.3);}
+.popular-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--cyan),var(--electric-glow));color:var(--bg);font-size:0.65rem;font-weight:700;padding:0.25rem 0.75rem;border-radius:100px;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;}
+.price-tier{font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.75rem;}
+.price-amount{font-family:'Syne',sans-serif;font-size:2.5rem;font-weight:800;}
+.price-period{font-size:0.8rem;color:var(--text-muted);margin-left:0.25rem;}
+.price-features{list-style:none;margin:1.5rem 0;}
+.price-features li{padding:0.5rem 0;font-size:0.875rem;color:var(--text-muted);display:flex;gap:0.6rem;align-items:center;border-bottom:1px solid rgba(255,255,255,0.04);}
+.price-features li:last-child{border-bottom:none;}
+.check{color:var(--green);font-weight:700;}
+
+/* ── TESTIMONIALS ── */
+.testimonials-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:3rem;}
+.testi-card{background:var(--bg3);border:1px solid var(--border);border-radius:16px;padding:1.75rem;transition:border-color 0.3s;}
+.testi-card:hover{border-color:var(--border-hover);}
+.stars{color:var(--gold);font-size:0.875rem;margin-bottom:1rem;letter-spacing:0.1em;}
+.testi-text{font-size:0.875rem;color:var(--text-muted);line-height:1.7;margin-bottom:1.25rem;font-style:italic;}
+.testi-author{display:flex;align-items:center;gap:0.75rem;}
+.author-avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;background:linear-gradient(135deg,var(--electric),var(--cyan-dim));color:white;flex-shrink:0;}
+.author-name{font-weight:600;font-size:0.875rem;}
+.author-role{font-size:0.75rem;color:var(--text-muted);}
+
+/* ── CTA ── */
+.cta-section{text-align:center;padding:8rem 2rem;position:relative;overflow:hidden;}
+.cta-section::before{content:'';position:absolute;width:600px;height:600px;background:radial-gradient(circle,rgba(0,245,212,0.06) 0%,transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%);border-radius:50%;}
+.cta-section h2{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,3.5rem);font-weight:800;margin-bottom:1rem;letter-spacing:-0.02em;}
+
+/* ── FOOTER ── */
+footer{background:var(--bg);border-top:1px solid var(--border);padding:3rem 2rem;}
+.footer-inner{max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;}
+.footer-links{display:flex;gap:2rem;}
+.footer-links a{font-size:0.8rem;color:var(--text-muted);text-decoration:none;transition:color 0.2s;}
+.footer-links a:hover{color:var(--cyan);}
+.footer-copy{font-size:0.75rem;color:var(--text-dim);}
+
+/* ── DETECTION ── */
+.detect-section{background:var(--bg3);}
+.detect-layout{display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:start;margin-top:3rem;}
+.camera-feed{background:#010509;border:1px solid var(--border);border-radius:12px;overflow:hidden;position:relative;aspect-ratio:16/10;}
+.camera-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:0.75rem;}
+.scan-frame{width:160px;height:120px;border:2px solid var(--cyan);border-radius:8px;position:relative;animation:scanPulse 2s ease infinite;}
+@keyframes scanPulse{0%,100%{border-color:var(--cyan);box-shadow:0 0 0 0 rgba(0,245,212,0.3)}50%{border-color:var(--cyan-dim);box-shadow:0 0 20px rgba(0,245,212,0.2)}}
+.scan-line{position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);animation:scanMove 1.5s linear infinite;}
+@keyframes scanMove{from{top:0}to{top:100%}}
+.scan-frame::before{content:'';position:absolute;top:-2px;left:-2px;width:12px;height:12px;border:3px solid var(--gold);border-right:none;border-bottom:none;}
+.scan-frame::after{content:'';position:absolute;top:-2px;right:-2px;width:12px;height:12px;border:3px solid var(--gold);border-left:none;border-bottom:none;}
+.camera-status{font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--cyan);letter-spacing:0.1em;}
+.cam-label{position:absolute;bottom:12px;left:12px;font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--cyan);opacity:0.6;}
+.cam-rec{position:absolute;top:12px;right:12px;display:flex;align-items:center;gap:4px;font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--red);}
+.rec-dot{width:5px;height:5px;background:var(--red);border-radius:50%;animation:pulse 1s infinite;}
+.detections-log{display:flex;flex-direction:column;gap:0.75rem;}
+.det-entry{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1rem 1.25rem;display:flex;align-items:center;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:0.72rem;}
+.det-plate{color:var(--text);font-weight:500;letter-spacing:0.08em;}
+.det-time{color:var(--text-muted);}
+.det-status{padding:0.2rem 0.6rem;border-radius:4px;font-size:0.65rem;font-weight:600;}
+.det-in{background:rgba(34,197,94,0.15);color:var(--green);}
+.det-out{background:rgba(239,68,68,0.15);color:var(--red);}
+.det-vip{background:rgba(245,158,11,0.15);color:var(--gold);}
+
+/* ── AI PANEL ── */
+.ai-panel-section{background:var(--bg2);}
+.ai-panel-layout{display:grid;grid-template-columns:1.2fr 1fr;gap:3rem;align-items:center;margin-top:3rem;}
+.ai-features-list{list-style:none;}
+.ai-feat-item{display:flex;gap:1rem;align-items:flex-start;padding:1.25rem 0;border-bottom:1px solid var(--border);}
+.ai-feat-item:last-child{border-bottom:none;}
+.ai-feat-num{font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--cyan);min-width:28px;margin-top:0.2rem;}
+.ai-feat-title{font-weight:600;font-size:0.95rem;margin-bottom:0.25rem;}
+.ai-feat-desc{font-size:0.825rem;color:var(--text-muted);}
+
+/* ── REVEAL ── */
+.reveal{opacity:0;transform:translateY(30px);transition:opacity 0.6s ease,transform 0.6s ease;}
+.reveal.visible{opacity:1;transform:translateY(0);}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  .dashboard-grid,.ai-panel-layout,.detect-layout{grid-template-columns:1fr;}
+  .features-grid,.hiw-steps,.pricing-grid,.testimonials-grid{grid-template-columns:1fr;}
+  nav{padding:1rem 1.25rem;}.nav-links{display:none;}
+}
+
+/* ══════════════════════════════════════
+   LOGIN / REGISTER PAGE
+══════════════════════════════════════ */
+.auth-page{min-height:100vh;display:grid;grid-template-columns:1fr 1fr;position:relative;}
+@media(max-width:768px){.auth-page{grid-template-columns:1fr;}}
+
+.auth-visual{position:relative;background:#020810;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem;}
+.auth-visual-bg{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(0,245,212,0.08) 0%,transparent 70%);}
+.auth-visual-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(0,245,212,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,245,212,0.04) 1px,transparent 1px);background-size:50px 50px;}
+.auth-car-showcase{position:relative;z-index:1;width:100%;max-width:460px;}
+.auth-brand{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--cyan);margin-bottom:0.5rem;display:flex;align-items:center;gap:0.75rem;}
+.auth-tagline{color:var(--text-muted);font-size:0.95rem;margin-bottom:3rem;}
+.auth-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;margin-top:2rem;}
+.auth-stat{background:rgba(0,245,212,0.05);border:1px solid rgba(0,245,212,0.12);border-radius:10px;padding:1rem;}
+.auth-stat-num{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;color:var(--cyan);}
+.auth-stat-label{font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;}
+
+.auth-form-panel{background:var(--bg);display:flex;align-items:center;justify-content:center;padding:3rem 2rem;}
+.auth-form-box{width:100%;max-width:420px;}
+.auth-title{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;margin-bottom:0.4rem;}
+.auth-sub{color:var(--text-muted);font-size:0.9rem;margin-bottom:2rem;}
+.auth-tabs{display:flex;background:var(--bg2);border-radius:8px;padding:4px;margin-bottom:2rem;border:1px solid var(--border);}
+.auth-tab{flex:1;padding:0.6rem;border-radius:6px;text-align:center;font-size:0.85rem;font-weight:600;cursor:pointer;transition:all 0.2s;color:var(--text-muted);}
+.auth-tab.active{background:var(--cyan);color:var(--bg);}
+.form-group{margin-bottom:1.25rem;}
+.form-label{font-size:0.78rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.4rem;display:block;}
+.form-input{width:100%;padding:0.75rem 1rem;background:var(--bg2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.9rem;font-family:'DM Sans',sans-serif;transition:border-color 0.2s;outline:none;}
+.form-input:focus{border-color:var(--cyan);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.form-error{font-size:0.75rem;color:var(--red);margin-top:0.35rem;display:none;}
+.form-error.show{display:block;}
+.auth-btn{width:100%;padding:0.875rem;background:linear-gradient(135deg,var(--cyan),var(--cyan-dim));color:var(--bg);border:none;border-radius:8px;font-weight:700;font-size:0.95rem;cursor:pointer;font-family:'Syne',sans-serif;transition:all 0.2s;margin-top:0.5rem;}
+.auth-btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,245,212,0.3);}
+.auth-divider{text-align:center;color:var(--text-dim);font-size:0.8rem;margin:1.25rem 0;position:relative;}
+.auth-divider::before,.auth-divider::after{content:'';position:absolute;top:50%;width:40%;height:1px;background:var(--border);}
+.auth-divider::before{left:0;}.auth-divider::after{right:0;}
+.social-btns{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;}
+.social-btn{padding:0.65rem;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text-muted);font-size:0.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.5rem;transition:all 0.2s;font-family:'DM Sans',sans-serif;}
+.social-btn:hover{border-color:var(--border-hover);color:var(--text);}
+.back-link{display:inline-flex;align-items:center;gap:0.5rem;color:var(--cyan);font-size:0.85rem;cursor:pointer;margin-bottom:2rem;text-decoration:none;transition:opacity 0.2s;}
+.back-link:hover{opacity:0.8;}
+
+/* ══════════════════════════════════════
+   BOOKING PAGE
+══════════════════════════════════════ */
+.booking-page{min-height:100vh;padding:7rem 2rem 4rem;}
+.booking-grid{display:grid;grid-template-columns:1.5fr 1fr;gap:2.5rem;max-width:1100px;margin:2rem auto 0;}
+@media(max-width:900px){.booking-grid{grid-template-columns:1fr;}}
+.booking-map-section{}
+.booking-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:2rem;}
+.booking-slot-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin:1.5rem 0;}
+.b-spot{aspect-ratio:1;border-radius:5px;cursor:pointer;transition:all 0.15s;position:relative;}
+.b-spot.free{background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.4);}
+.b-spot.free:hover{background:rgba(34,197,94,0.35);transform:scale(1.08);}
+.b-spot.occupied{background:rgba(239,68,68,0.2);border:1px solid rgba(239,68,68,0.4);cursor:not-allowed;}
+.b-spot.selected{background:rgba(0,245,212,0.3);border:2px solid var(--cyan);transform:scale(1.08);}
+.b-spot.ev{background:rgba(0,245,212,0.1);border:1px solid rgba(0,245,212,0.3);}
+.b-spot.disabled{background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.3);}
+.booking-summary{position:sticky;top:7rem;}
+.summary-row{display:flex;justify-content:space-between;padding:0.6rem 0;border-bottom:1px solid var(--border);font-size:0.875rem;}
+.summary-row:last-child{border-bottom:none;}
+.summary-row.total{font-weight:700;font-size:1rem;color:var(--cyan);}
+.spot-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:0.45rem;color:rgba(255,255,255,0.4);font-family:'JetBrains Mono',monospace;}
+
+/* ══════════════════════════════════════
+   PAYMENT PAGE
+══════════════════════════════════════ */
+.payment-page{min-height:100vh;padding:7rem 2rem 4rem;}
+.payment-container{max-width:860px;margin:0 auto;}
+.payment-grid{display:grid;grid-template-columns:1fr 380px;gap:2rem;margin-top:2rem;}
+@media(max-width:800px){.payment-grid{grid-template-columns:1fr;}}
+.payment-methods{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:2rem;}
+.method-tabs{display:flex;gap:0.75rem;margin-bottom:2rem;flex-wrap:wrap;}
+.method-tab{padding:0.6rem 1.25rem;border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:0.85rem;font-weight:500;transition:all 0.2s;background:transparent;color:var(--text-muted);}
+.method-tab.active{border-color:var(--cyan);background:rgba(0,245,212,0.08);color:var(--cyan);}
+.method-content{display:none;}
+.method-content.active{display:block;}
+.upi-apps{display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;margin-bottom:1.5rem;}
+.upi-app{border:1px solid var(--border);border-radius:10px;padding:0.75rem;text-align:center;cursor:pointer;transition:all 0.2s;}
+.upi-app:hover,.upi-app.selected{border-color:var(--cyan);background:rgba(0,245,212,0.06);}
+.upi-app-icon{font-size:1.5rem;margin-bottom:0.3rem;}
+.upi-app-name{font-size:0.7rem;color:var(--text-muted);}
+.card-form{display:flex;flex-direction:column;gap:1rem;}
+.card-preview{background:linear-gradient(135deg,#0f2b4a,#1a3d5c);border-radius:14px;padding:1.5rem;margin-bottom:1.5rem;position:relative;overflow:hidden;}
+.card-preview::before{content:'';position:absolute;right:-20px;top:-20px;width:120px;height:120px;border-radius:50%;background:rgba(0,245,212,0.05);border:30px solid rgba(0,245,212,0.05);}
+.card-chip{width:32px;height:24px;background:linear-gradient(135deg,#d4a754,#f0c870);border-radius:4px;margin-bottom:1rem;}
+.card-number-preview{font-family:'JetBrains Mono',monospace;font-size:1.1rem;letter-spacing:0.2em;color:rgba(255,255,255,0.9);margin-bottom:1rem;}
+.card-meta{display:flex;justify-content:space-between;font-size:0.7rem;color:rgba(255,255,255,0.6);}
+.wallet-options{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.wallet-opt{border:1px solid var(--border);border-radius:10px;padding:1rem;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:0.75rem;}
+.wallet-opt:hover,.wallet-opt.selected{border-color:var(--cyan);background:rgba(0,245,212,0.06);}
+.wallet-icon{font-size:1.5rem;}
+.wallet-name{font-size:0.875rem;font-weight:600;}
+.wallet-bal{font-size:0.72rem;color:var(--green);}
+
+.payment-summary-box{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:2rem;height:fit-content;}
+.pay-summary-title{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;margin-bottom:1.5rem;}
+.pay-row{display:flex;justify-content:space-between;padding:0.65rem 0;border-bottom:1px solid var(--border);font-size:0.875rem;}
+.pay-row:last-child{border-bottom:none;}
+.pay-total{font-weight:700;font-size:1.05rem;color:var(--cyan);}
+.pay-now-btn{width:100%;padding:1rem;background:linear-gradient(135deg,var(--cyan),var(--cyan-dim));color:var(--bg);border:none;border-radius:10px;font-weight:700;font-size:1rem;cursor:pointer;font-family:'Syne',sans-serif;margin-top:1.5rem;transition:all 0.2s;}
+.pay-now-btn:hover{transform:translateY(-2px);box-shadow:0 10px 35px rgba(0,245,212,0.3);}
+.security-note{display:flex;align-items:center;gap:0.5rem;font-size:0.72rem;color:var(--text-muted);margin-top:0.75rem;justify-content:center;}
+
+/* ── SUCCESS MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(5,11,20,0.85);backdrop-filter:blur(8px);z-index:300;align-items:center;justify-content:center;}
+.modal-overlay.active{display:flex;}
+.modal-box{background:var(--bg2);border:1px solid rgba(0,245,212,0.3);border-radius:20px;padding:3rem;max-width:440px;width:90%;text-align:center;animation:modalIn 0.4s ease;}
+@keyframes modalIn{from{opacity:0;transform:scale(0.9)}to{opacity:1;transform:scale(1)}}
+.modal-icon{font-size:4rem;margin-bottom:1rem;}
+.modal-title{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;margin-bottom:0.5rem;}
+.modal-sub{color:var(--text-muted);font-size:0.9rem;margin-bottom:2rem;}
+.modal-ticket{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;font-family:'JetBrains Mono',monospace;font-size:0.78rem;text-align:left;}
+.ticket-row{display:flex;justify-content:space-between;padding:0.35rem 0;color:var(--text-muted);}
+.ticket-val{color:var(--cyan);}
+
+/* ── DASHBOARD USER ── */
+.user-dashboard{padding:7rem 2rem 4rem;}
+.dashboard-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;}
+.dash-welcome{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;}
+.bookings-table{width:100%;border-collapse:collapse;margin-top:1.5rem;}
+.bookings-table th{text-align:left;padding:0.75rem 1rem;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);border-bottom:1px solid var(--border);}
+.bookings-table td{padding:0.875rem 1rem;font-size:0.875rem;border-bottom:1px solid rgba(255,255,255,0.04);}
+.bookings-table tr:last-child td{border-bottom:none;}
+.status-badge{padding:0.2rem 0.6rem;border-radius:4px;font-size:0.7rem;font-weight:600;}
+.status-active{background:rgba(34,197,94,0.15);color:var(--green);}
+.status-completed{background:rgba(100,116,139,0.2);color:var(--text-muted);}
+.status-upcoming{background:rgba(245,158,11,0.15);color:var(--gold);}
+
+/* ── CAR SVG STYLES ── */
+.car-display{width:100%;filter:drop-shadow(0 20px 40px rgba(0,245,212,0.2));}
+
+/* ── NOTIFICATION TOAST ── */
+.toast{position:fixed;bottom:2rem;right:2rem;background:var(--bg2);border:1px solid rgba(0,245,212,0.3);border-radius:10px;padding:1rem 1.5rem;font-size:0.85rem;z-index:500;transform:translateY(100px);opacity:0;transition:all 0.3s;max-width:320px;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast-success{border-color:rgba(34,197,94,0.4);}
+.toast-error{border-color:rgba(239,68,68,0.4);}
+</style>
+</head>
+<body>
+
+<!-- ── TOAST ── -->
+<div class="toast" id="toast"></div>
+
+<!-- ══════════════════════════════════════
+     SUCCESS MODAL
+══════════════════════════════════════ -->
+<div class="modal-overlay" id="successModal">
+  <div class="modal-box">
+    <div class="modal-icon">✅</div>
+    <div class="modal-title">Payment Successful!</div>
+    <div class="modal-sub">Your parking slot has been booked. Check your email for confirmation.</div>
+    <div class="modal-ticket" id="ticketDetails">
+      <div class="ticket-row"><span>Booking ID</span><span class="ticket-val" id="t-id"></span></div>
+      <div class="ticket-row"><span>Slot</span><span class="ticket-val" id="t-slot"></span></div>
+      <div class="ticket-row"><span>Duration</span><span class="ticket-val" id="t-dur"></span></div>
+      <div class="ticket-row"><span>Amount Paid</span><span class="ticket-val" id="t-amt"></span></div>
+      <div class="ticket-row"><span>Status</span><span class="ticket-val" style="color:var(--green)">CONFIRMED</span></div>
+    </div>
+    <button class="auth-btn" onclick="closeModal()">View My Bookings</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     NAV
+══════════════════════════════════════ -->
+<nav id="mainNav">
+  <div class="logo" onclick="showPage('main')">
+    <div class="logo-icon">🅿</div>
+    SmartPark<span style="color:var(--text-muted);font-weight:400"> AI</span>
+  </div>
+  <div class="nav-links" id="navLinks">
+    <a onclick="showPage('main');scrollTo(0,0)">Home</a>
+    <a onclick="document.getElementById('dashboard').scrollIntoView({behavior:'smooth'})">Live Map</a>
+    <a onclick="document.getElementById('features').scrollIntoView({behavior:'smooth'})">Features</a>
+    <a onclick="document.getElementById('pricing').scrollIntoView({behavior:'smooth'})">Pricing</a>
+    <a onclick="requireAuth('booking')" class="nav-cta">Book Slot</a>
+  </div>
+  <div id="navUser" style="display:none" class="nav-user">
+    <div class="nav-avatar" id="navAvatar" onclick="showPage('userdash')">U</div>
+    <span class="nav-username" id="navUsername"></span>
+    <a onclick="logout()" style="font-size:0.75rem;color:var(--text-muted);cursor:pointer;margin-left:0.5rem;">Logout</a>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════
+     MAIN WEBSITE
+══════════════════════════════════════ -->
+<div id="mainPage">
+
+<!-- HERO -->
+<section class="hero" id="home">
+  <div class="grid-bg"></div>
+  <div class="hero-orb orb1"></div>
+  <div class="hero-orb orb2"></div>
+  <div class="hero-orb orb3"></div>
+
+  <div style="position:relative;z-index:1;max-width:900px;margin:0 auto;">
+    <div class="hero-badge"><span class="badge-dot"></span>AI-Powered · Real-Time · Computer Vision Enabled</div>
+    <h1>The Future of<br><span class="gradient-text">Smart Parking</span><br>Is Here</h1>
+    <p>Transform any parking facility into an intelligent ecosystem. Real-time slot detection, AI license plate recognition, predictive analytics, and seamless payment — all in one platform.</p>
+    <div class="hero-buttons">
+      <button class="btn-primary" onclick="requireAuth('booking')">Book a Slot →</button>
+      <button class="btn-outline" onclick="document.getElementById('features').scrollIntoView({behavior:'smooth'})">Explore Features</button>
+    </div>
+    <div class="stats-bar">
+      <div class="stat-item"><span class="stat-num" id="cnt1">0</span><span class="stat-label">Slots Managed</span></div>
+      <div class="stat-item"><span class="stat-num" id="cnt2">0</span><span class="stat-label">Cities Deployed</span></div>
+      <div class="stat-item"><span class="stat-num" id="cnt3">0</span><span class="stat-label">Vehicles / Day</span></div>
+      <div class="stat-item"><span class="stat-num" id="cnt4">0%</span><span class="stat-label">Uptime SLA</span></div>
+    </div>
+  </div>
+
+  <!-- CAR SVG STRIP -->
+  <div class="car-strip">
+    <div style="height:70px;overflow:hidden;opacity:0.25;">
+      <div class="car-track" id="carTrack1"></div>
+    </div>
+    <div style="height:60px;overflow:hidden;opacity:0.15;margin-top:4px;">
+      <div class="car-track-rev" id="carTrack2"></div>
+    </div>
+  </div>
+</section>
+
+<!-- CAR SHOWCASE SECTION -->
+<section style="background:var(--bg2);padding:5rem 2rem;">
+  <div class="container">
+    <div class="section-label">// ai vehicle recognition</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center;">
+      <div>
+        <h2 class="section-title">Detect Any Vehicle,<br><span class="gradient-text">Instantly</span></h2>
+        <p class="section-sub">Our computer vision engine identifies sedans, SUVs, trucks, motorcycles, and EVs in under 200ms — day or night, rain or shine.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:2rem;">
+          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:1rem;text-align:center;">
+            <div style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:var(--cyan);">99.7%</div>
+            <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;">Detection Accuracy</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:1rem;text-align:center;">
+            <div style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:var(--gold);">200ms</div>
+            <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;">Response Time</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:1rem;text-align:center;">
+            <div style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:var(--green);">8+</div>
+            <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;">Vehicle Types</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:1rem;text-align:center;">
+            <div style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:var(--electric-glow);">24/7</div>
+            <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;">All Conditions</div>
+          </div>
+        </div>
+      </div>
+      <div style="position:relative;">
+        <!-- SVG Car Showcase -->
+        <svg viewBox="0 0 500 300" class="car-display" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#1a3a5c"/>
+              <stop offset="100%" style="stop-color:#0d2137"/>
+            </linearGradient>
+            <linearGradient id="roofGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style="stop-color:#2a5080"/>
+              <stop offset="100%" style="stop-color:#1a3a5c"/>
+            </linearGradient>
+            <filter id="glow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+            <filter id="softglow"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          </defs>
+          <!-- Road -->
+          <rect x="0" y="245" width="500" height="55" fill="#060e1a" rx="0"/>
+          <rect x="0" y="243" width="500" height="4" fill="#0d1f35"/>
+          <!-- Road markings -->
+          <rect x="40" y="266" width="60" height="4" fill="rgba(0,245,212,0.15)" rx="2"/>
+          <rect x="140" y="266" width="60" height="4" fill="rgba(0,245,212,0.15)" rx="2"/>
+          <rect x="240" y="266" width="60" height="4" fill="rgba(0,245,212,0.15)" rx="2"/>
+          <rect x="340" y="266" width="60" height="4" fill="rgba(0,245,212,0.15)" rx="2"/>
+          <rect x="440" y="266" width="60" height="4" fill="rgba(0,245,212,0.15)" rx="2"/>
+          <!-- Shadow -->
+          <ellipse cx="250" cy="248" rx="160" ry="12" fill="rgba(0,0,0,0.5)"/>
+          <!-- Car Body -->
+          <rect x="60" y="180" width="380" height="65" rx="8" fill="url(#bodyGrad)" stroke="rgba(0,245,212,0.2)" stroke-width="1"/>
+          <!-- Roof / Cabin -->
+          <path d="M155 180 Q175 130 205 125 L295 125 Q330 130 345 180Z" fill="url(#roofGrad)" stroke="rgba(0,245,212,0.15)" stroke-width="1"/>
+          <!-- Windows -->
+          <path d="M165 178 Q178 145 205 138 L245 138 L245 178Z" fill="rgba(0,245,212,0.08)" stroke="rgba(0,245,212,0.25)" stroke-width="1.5"/>
+          <path d="M250 178 L250 138 L295 138 Q322 145 332 178Z" fill="rgba(0,245,212,0.08)" stroke="rgba(0,245,212,0.25)" stroke-width="1.5"/>
+          <!-- Window divider -->
+          <line x1="249" y1="138" x2="249" y2="178" stroke="rgba(0,245,212,0.3)" stroke-width="2"/>
+          <!-- Front bumper detail -->
+          <rect x="60" y="220" width="380" height="10" rx="4" fill="rgba(0,245,212,0.08)" stroke="rgba(0,245,212,0.15)" stroke-width="1"/>
+          <!-- Headlights -->
+          <ellipse cx="95" cy="205" rx="22" ry="12" fill="#0a1f35" stroke="rgba(0,245,212,0.4)" stroke-width="1.5" filter="url(#glow)"/>
+          <ellipse cx="95" cy="205" rx="14" ry="7" fill="rgba(0,245,212,0.15)"/>
+          <ellipse cx="95" cy="205" rx="6" ry="3" fill="rgba(0,245,212,0.6)" filter="url(#glow)"/>
+          <!-- Headlight beam -->
+          <path d="M72 200 L10 185 L10 215 L72 208Z" fill="rgba(0,245,212,0.04)"/>
+          <!-- Tail lights -->
+          <ellipse cx="405" cy="205" rx="22" ry="12" fill="#0a1f35" stroke="rgba(239,68,68,0.5)" stroke-width="1.5"/>
+          <ellipse cx="405" cy="205" rx="14" ry="7" fill="rgba(239,68,68,0.15)"/>
+          <ellipse cx="405" cy="205" rx="6" ry="3" fill="rgba(239,68,68,0.7)"/>
+          <!-- Grille -->
+          <rect x="68" y="198" width="18" height="18" rx="2" fill="rgba(0,245,212,0.06)" stroke="rgba(0,245,212,0.2)" stroke-width="1"/>
+          <line x1="68" y1="204" x2="86" y2="204" stroke="rgba(0,245,212,0.3)" stroke-width="1"/>
+          <line x1="68" y1="210" x2="86" y2="210" stroke="rgba(0,245,212,0.3)" stroke-width="1"/>
+          <line x1="75" y1="198" x2="75" y2="216" stroke="rgba(0,245,212,0.3)" stroke-width="1"/>
+          <line x1="80" y1="198" x2="80" y2="216" stroke="rgba(0,245,212,0.3)" stroke-width="1"/>
+          <!-- Door lines -->
+          <line x1="185" y1="182" x2="185" y2="242" stroke="rgba(255,255,255,0.08)" stroke-width="1.5"/>
+          <line x1="315" y1="182" x2="315" y2="242" stroke="rgba(255,255,255,0.08)" stroke-width="1.5"/>
+          <!-- Door handles -->
+          <rect x="225" y="208" width="20" height="4" rx="2" fill="rgba(0,245,212,0.3)"/>
+          <rect x="270" y="208" width="20" height="4" rx="2" fill="rgba(0,245,212,0.3)"/>
+          <!-- Wheels -->
+          <circle cx="145" cy="242" r="28" fill="#080f1a" stroke="rgba(0,245,212,0.3)" stroke-width="2"/>
+          <circle cx="145" cy="242" r="20" fill="#0d1a2e"/>
+          <circle cx="145" cy="242" r="12" fill="#0a1525" stroke="rgba(0,245,212,0.4)" stroke-width="1"/>
+          <circle cx="145" cy="242" r="4" fill="rgba(0,245,212,0.6)"/>
+          <!-- Wheel spokes -->
+          <line x1="145" y1="222" x2="145" y2="262" stroke="rgba(0,245,212,0.25)" stroke-width="1.5"/>
+          <line x1="125" y1="242" x2="165" y2="242" stroke="rgba(0,245,212,0.25)" stroke-width="1.5"/>
+          <line x1="131" y1="228" x2="159" y2="256" stroke="rgba(0,245,212,0.15)" stroke-width="1.5"/>
+          <line x1="131" y1="256" x2="159" y2="228" stroke="rgba(0,245,212,0.15)" stroke-width="1.5"/>
+
+          <circle cx="355" cy="242" r="28" fill="#080f1a" stroke="rgba(0,245,212,0.3)" stroke-width="2"/>
+          <circle cx="355" cy="242" r="20" fill="#0d1a2e"/>
+          <circle cx="355" cy="242" r="12" fill="#0a1525" stroke="rgba(0,245,212,0.4)" stroke-width="1"/>
+          <circle cx="355" cy="242" r="4" fill="rgba(0,245,212,0.6)"/>
+          <line x1="355" y1="222" x2="355" y2="262" stroke="rgba(0,245,212,0.25)" stroke-width="1.5"/>
+          <line x1="335" y1="242" x2="375" y2="242" stroke="rgba(0,245,212,0.25)" stroke-width="1.5"/>
+          <line x1="341" y1="228" x2="369" y2="256" stroke="rgba(0,245,212,0.15)" stroke-width="1.5"/>
+          <line x1="341" y1="256" x2="369" y2="228" stroke="rgba(0,245,212,0.15)" stroke-width="1.5"/>
+
+          <!-- Scan overlay -->
+          <rect x="60" y="125" width="380" height="125" rx="4" fill="none" stroke="rgba(0,245,212,0.5)" stroke-width="1.5" stroke-dasharray="8,4"/>
+          <!-- Corner markers -->
+          <path d="M60 145 L60 125 L85 125" stroke="var(--cyan)" stroke-width="2.5" fill="none"/>
+          <path d="M415 125 L440 125 L440 145" stroke="var(--cyan)" stroke-width="2.5" fill="none"/>
+          <path d="M60 230 L60 250 L85 250" stroke="var(--cyan)" stroke-width="2.5" fill="none"/>
+          <path d="M415 250 L440 250 L440 230" stroke="var(--cyan)" stroke-width="2.5" fill="none"/>
+          <!-- Plate -->
+          <rect x="195" y="227" width="110" height="22" rx="3" fill="#e8e8e8"/>
+          <text x="250" y="243" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold" fill="#1a1a2e">TN09 AB 1234</text>
+          <!-- Scan label -->
+          <text x="250" y="115" text-anchor="middle" font-family="monospace" font-size="9" fill="rgba(0,245,212,0.7)" letter-spacing="2">VEHICLE DETECTED · PLATE READING</text>
+          <!-- Confidence -->
+          <text x="440" y="175" text-anchor="end" font-family="monospace" font-size="8" fill="rgba(0,245,212,0.6)">CONF: 99.7%</text>
+          <!-- EV badge -->
+          <rect x="200" y="148" width="36" height="16" rx="3" fill="rgba(0,245,212,0.2)" stroke="rgba(0,245,212,0.5)" stroke-width="1"/>
+          <text x="218" y="160" text-anchor="middle" font-family="monospace" font-size="8" fill="var(--cyan)" font-weight="bold">⚡EV</text>
+        </svg>
+        <!-- Floating badges -->
+        <div style="position:absolute;top:10px;right:0;background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.4);border-radius:8px;padding:0.4rem 0.8rem;font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--green);">✓ SLOT ASSIGNED: B2-14</div>
+        <div style="position:absolute;bottom:60px;left:-10px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:0.4rem 0.8rem;font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--gold);">⚡ EV CHARGING AVAILABLE</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LIVE DASHBOARD -->
+<section class="dashboard-section" id="dashboard">
+  <div class="container">
+    <div class="section-label">// live overview</div>
+    <h2 class="section-title">Real-Time Parking Dashboard</h2>
+    <p class="section-sub">Monitor every slot in your facility, live. AI detects occupancy changes within milliseconds.</p>
+    <div class="dashboard-grid">
+      <div class="lot-map reveal">
+        <div class="lot-map-title"><span class="live-dot"></span>LEVEL B2 — MAIN FACILITY</div>
+        <div class="parking-grid" id="parkingGrid"></div>
+        <div class="lot-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:rgba(34,197,94,0.6)"></div>Free</div>
+          <div class="legend-item"><div class="legend-dot" style="background:rgba(239,68,68,0.6)"></div>Occupied</div>
+          <div class="legend-item"><div class="legend-dot" style="background:rgba(245,158,11,0.6)"></div>Reserved</div>
+          <div class="legend-item"><div class="legend-dot" style="background:rgba(0,245,212,0.6)"></div>EV Charging</div>
+          <div class="legend-item"><div class="legend-dot" style="background:rgba(139,92,246,0.6)"></div>Disabled</div>
+        </div>
+        <div style="margin-top:1rem;font-size:0.72rem;color:var(--text-muted);">⟳ Updates every 500ms via AI camera feed</div>
+      </div>
+      <div class="dashboard-right reveal">
+        <div class="metric-card">
+          <div class="metric-info">
+            <span class="metric-label">Available Slots</span>
+            <span class="metric-value" id="freeCount">28</span>
+            <span class="metric-change up">↑ 3 in last 5 min</span>
+            <div class="occ-bar-wrap"><div class="occ-bar-track"><div class="occ-bar-fill" id="freeBar" style="width:45%"></div></div></div>
+          </div>
+          <div class="metric-icon icon-green">🟢</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-info">
+            <span class="metric-label">Occupied</span>
+            <span class="metric-value" id="occCount">36</span>
+            <span class="metric-change down">↓ 2 in last 5 min</span>
+          </div>
+          <div class="metric-icon icon-red">🔴</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-info">
+            <span class="metric-label">Avg Dwell Time</span>
+            <span class="metric-value">42<span style="font-size:1rem;color:var(--text-muted)"> min</span></span>
+            <span class="metric-change up">AI predicted: 38 min</span>
+          </div>
+          <div class="metric-icon icon-cyan">⏱</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-info">
+            <span class="metric-label">Revenue Today</span>
+            <span class="metric-value">₹<span id="revenue">12,480</span></span>
+            <span class="metric-change up">↑ 18% vs yesterday</span>
+          </div>
+          <div class="metric-icon icon-gold">💰</div>
+        </div>
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:1.25rem;">
+          <div style="font-size:0.7rem;color:var(--cyan);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:1rem;font-family:'JetBrains Mono',monospace;">AI Prediction — Next 2h</div>
+          <div id="predChart" style="display:flex;align-items:flex-end;gap:6px;height:70px;"></div>
+          <div style="display:flex;justify-content:space-between;margin-top:0.5rem;">
+            <span style="font-size:0.65rem;color:var(--text-dim)">9AM</span><span style="font-size:0.65rem;color:var(--text-dim)">10AM</span><span style="font-size:0.65rem;color:var(--text-dim)">11AM</span><span style="font-size:0.65rem;color:var(--text-dim)">12PM</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="container">
+    <div class="section-label">// capabilities</div>
+    <h2 class="section-title">Powered by Advanced AI</h2>
+    <p class="section-sub">Every component built on cutting-edge machine learning and computer vision.</p>
+    <div class="features-grid">
+      <div class="feat-card reveal"><div class="feat-icon">👁️</div><div class="feat-title">Computer Vision Detection</div><div class="feat-desc">YOLO-based overhead cameras detect vehicle presence with 99.7% accuracy, updating slot status in under 200ms.</div><span class="feat-tag">CV · YOLO · 200ms</span></div>
+      <div class="feat-card reveal"><div class="feat-icon">🔢</div><div class="feat-title">License Plate Recognition</div><div class="feat-desc">OCR-powered ALPR reads number plates in all lighting conditions. Auto-match for VIP, monthly, and blacklisted vehicles.</div><span class="feat-tag">OCR · ALPR · 97% Accuracy</span></div>
+      <div class="feat-card reveal"><div class="feat-icon">📊</div><div class="feat-title">Predictive Occupancy</div><div class="feat-desc">LSTM neural networks forecast peak hours and slot demand up to 72 hours in advance.</div><span class="feat-tag">LSTM · 72h Forecast</span></div>
+      <div class="feat-card reveal"><div class="feat-icon">🗺️</div><div class="feat-title">Dynamic Navigation</div><div class="feat-desc">Real-time indoor maps guide drivers to the nearest available slot, reducing search time by 60%.</div><span class="feat-tag">Indoor Maps · BLE Beacons</span></div>
+      <div class="feat-card reveal"><div class="feat-icon">💳</div><div class="feat-title">Seamless Payments</div><div class="feat-desc">Automatic billing via UPI, FASTag, card, or QR. Payments triggered on exit — no manual action needed.</div><span class="feat-tag">UPI · FASTag · QR</span></div>
+      <div class="feat-card reveal"><div class="feat-icon">🔔</div><div class="feat-title">Smart Alerts</div><div class="feat-desc">Instant SMS/app notifications for over-stay, unauthorized parking, and EV charging completion.</div><span class="feat-tag">SMS · Push · Webhooks</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- VEHICLE DETECTION -->
+<section class="detect-section" id="detection">
+  <div class="container">
+    <div class="section-label">// ai detection engine</div>
+    <h2 class="section-title">Live Vehicle Detection</h2>
+    <p class="section-sub">Watch our computer vision engine detect and log vehicles in real time.</p>
+    <div class="detect-layout">
+      <div class="camera-feed reveal">
+        <div class="camera-overlay">
+          <div class="scan-frame"><div class="scan-line"></div></div>
+          <div class="camera-status" id="camStatus">SCANNING...</div>
+        </div>
+        <div class="cam-label">CAM-B2-04 · 1080p · 30fps</div>
+        <div class="cam-rec"><span class="rec-dot"></span> REC</div>
+      </div>
+      <div class="detections-log reveal">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--cyan);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:1rem;">Detection Log</div>
+        <div id="detectionLog"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AI PANEL -->
+<section class="ai-panel-section" id="ai">
+  <div class="container">
+    <div class="section-label">// intelligence layer</div>
+    <h2 class="section-title">AI Brain — Always Learning</h2>
+    <div class="ai-panel-layout">
+      <div class="terminal reveal">
+        <div class="terminal-bar">
+          <span class="t-dot t-red"></span><span class="t-dot t-yellow"></span><span class="t-dot t-green"></span>
+          <span class="terminal-title">smartpark-ai · inference-engine · v3.2.1</span>
+        </div>
+        <div class="terminal-body">
+          <span class="t-line"><span class="t-prompt">$ </span><span class="t-cmd">smartpark analyze --lot=B2</span></span>
+          <span class="t-line t-out">Initializing AI inference pipeline...</span>
+          <span class="t-line t-out">Loading YOLOv8 model — weights: parking_v4.pt</span>
+          <span class="t-line">&nbsp;</span>
+          <span class="t-line"><span class="t-prompt">→ </span><span class="t-out">Slots scanned: </span><span class="t-val">64/64</span></span>
+          <span class="t-line"><span class="t-prompt">→ </span><span class="t-out">Confidence avg: </span><span class="t-val">99.3%</span></span>
+          <span class="t-line"><span class="t-prompt">→ </span><span class="t-out">Vehicles detected: </span><span class="t-val">36</span></span>
+          <span class="t-line"><span class="t-prompt">→ </span><span class="t-out">ALPR processed: </span><span class="t-val">34</span></span>
+          <span class="t-line">&nbsp;</span>
+          <span class="t-line"><span class="t-prompt">⚠ </span><span class="t-warn">ALERT: TN09AB1234 — over-stay (3h 42m)</span></span>
+          <span class="t-line"><span class="t-prompt">⚠ </span><span class="t-warn">SLOT B2-07: Unauthorized (no registration)</span></span>
+          <span class="t-line">&nbsp;</span>
+          <span class="t-line"><span class="t-prompt">✓ </span><span class="t-good">Peak prediction: 1–3 PM (92% occupancy)</span></span>
+          <span class="t-line"><span class="t-prompt">✓ </span><span class="t-good">Revenue forecast today: ₹18,200</span></span>
+          <span class="t-line">&nbsp;</span>
+          <span class="t-line"><span class="t-prompt">$ </span><span class="t-cursor"></span></span>
+        </div>
+      </div>
+      <ul class="ai-features-list reveal">
+        <li class="ai-feat-item"><span class="ai-feat-num">01</span><div><div class="ai-feat-title">Continuous Learning</div><div class="ai-feat-desc">The model retrains weekly on new data from your facility, improving detection accuracy over time.</div></div></li>
+        <li class="ai-feat-item"><span class="ai-feat-num">02</span><div><div class="ai-feat-title">Anomaly Detection</div><div class="ai-feat-desc">Flags unusual patterns — abandoned vehicles, over-stays, unauthorized occupancy.</div></div></li>
+        <li class="ai-feat-item"><span class="ai-feat-num">03</span><div><div class="ai-feat-title">Revenue Intelligence</div><div class="ai-feat-desc">Dynamic pricing suggestions based on demand, time-of-day, and historical patterns.</div></div></li>
+        <li class="ai-feat-item"><span class="ai-feat-num">04</span><div><div class="ai-feat-title">Edge Inference</div><div class="ai-feat-desc">AI runs on-device on edge hardware — no cloud dependency. Works even offline.</div></div></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how-it-works">
+  <div class="container" style="text-align:center;">
+    <div class="section-label">// process</div>
+    <h2 class="section-title">How SmartPark Works</h2>
+    <p class="section-sub" style="margin:0 auto;">From vehicle entry to payment — completely automated.</p>
+    <div class="hiw-steps">
+      <div class="step-card reveal"><div class="step-num">01</div><div class="step-title">Vehicle Arrives</div><div class="step-desc">Camera reads the number plate in real time. System checks registration and available slots.</div></div>
+      <div class="step-card reveal"><div class="step-num">02</div><div class="step-title">Slot Assigned</div><div class="step-desc">AI assigns the optimal slot based on proximity, EV preference, and pre-booking.</div></div>
+      <div class="step-card reveal"><div class="step-num">03</div><div class="step-title">Monitoring Active</div><div class="step-desc">Overhead sensors continuously track occupancy. Alerts fire for over-stay or unauthorized use.</div></div>
+      <div class="step-card reveal"><div class="step-num">04</div><div class="step-title">Auto Checkout</div><div class="step-desc">On exit, billing calculated and payment processed via FASTag/UPI automatically.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing" style="background:var(--bg2)">
+  <div class="container">
+    <div class="section-label">// plans</div>
+    <h2 class="section-title">Simple, Scalable Pricing</h2>
+    <p class="section-sub">All plans include AI, mobile app, and real-time dashboard.</p>
+    <div class="pricing-grid">
+      <div class="price-card reveal">
+        <div class="price-tier">Starter</div>
+        <div><span class="price-amount">₹4,999</span><span class="price-period">/month</span></div>
+        <p style="font-size:0.8rem;color:var(--text-muted);margin-top:0.75rem;">Up to 100 slots. Perfect for malls and offices.</p>
+        <ul class="price-features">
+          <li><span class="check">✓</span> Up to 100 parking slots</li>
+          <li><span class="check">✓</span> Real-time occupancy map</li>
+          <li><span class="check">✓</span> Basic ALPR</li>
+          <li><span class="check">✓</span> UPI + QR payments</li>
+          <li><span class="check">✓</span> Mobile app (iOS + Android)</li>
+          <li style="opacity:0.4"><span>✗</span> Predictive analytics</li>
+          <li style="opacity:0.4"><span>✗</span> Edge AI hardware</li>
+        </ul>
+        <button class="btn-outline" style="display:block;width:100%;text-align:center;margin-top:1.5rem;" onclick="requireAuth('booking')">Get Started</button>
+      </div>
+      <div class="price-card featured reveal">
+        <div class="popular-badge">Most Popular</div>
+        <div class="price-tier">Professional</div>
+        <div><span class="price-amount">₹12,999</span><span class="price-period">/month</span></div>
+        <p style="font-size:0.8rem;color:var(--text-muted);margin-top:0.75rem;">Up to 500 slots. Full AI suite included.</p>
+        <ul class="price-features">
+          <li><span class="check">✓</span> Up to 500 parking slots</li>
+          <li><span class="check">✓</span> Full computer vision suite</li>
+          <li><span class="check">✓</span> Advanced ALPR + VIP</li>
+          <li><span class="check">✓</span> All payment methods</li>
+          <li><span class="check">✓</span> Predictive analytics</li>
+          <li><span class="check">✓</span> Dynamic pricing AI</li>
+          <li style="opacity:0.4"><span>✗</span> Edge AI hardware</li>
+        </ul>
+        <button class="btn-primary" style="display:block;width:100%;text-align:center;margin-top:1.5rem;" onclick="requireAuth('booking')">Get Started</button>
+      </div>
+      <div class="price-card reveal">
+        <div class="price-tier">Enterprise</div>
+        <div><span class="price-amount">Custom</span></div>
+        <p style="font-size:0.8rem;color:var(--text-muted);margin-top:0.75rem;">Unlimited slots. Full deployment + hardware.</p>
+        <ul class="price-features">
+          <li><span class="check">✓</span> Unlimited slots</li>
+          <li><span class="check">✓</span> Edge AI hardware included</li>
+          <li><span class="check">✓</span> Multi-facility management</li>
+          <li><span class="check">✓</span> Custom integrations (ERP/CMS)</li>
+          <li><span class="check">✓</span> 24/7 dedicated support</li>
+          <li><span class="check">✓</span> White-label mobile app</li>
+          <li><span class="check">✓</span> SLA 99.99% uptime</li>
+        </ul>
+        <button class="btn-outline" style="display:block;width:100%;text-align:center;margin-top:1.5rem;" onclick="requireAuth('booking')">Contact Sales</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section style="background:var(--bg3);">
+  <div class="container">
+    <div class="section-label">// reviews</div>
+    <h2 class="section-title">Trusted by Facility Managers</h2>
+    <div class="testimonials-grid">
+      <div class="testi-card reveal"><div class="stars">★★★★★</div><p class="testi-text">"SmartPark reduced our parking disputes by 85%. The ALPR is incredibly accurate and the dashboard is intuitive."</p><div class="testi-author"><div class="author-avatar">RK</div><div><div class="author-name">Rajesh Kumar</div><div class="author-role">Facility Manager, Phoenix Mall Chennai</div></div></div></div>
+      <div class="testi-card reveal"><div class="stars">★★★★★</div><p class="testi-text">"Revenue went up 22% in the first month after deployment. The dynamic pricing feature alone paid for the system."</p><div class="testi-author"><div class="author-avatar">AP</div><div><div class="author-name">Anjali Priya</div><div class="author-role">Operations Head, IT Park Hyderabad</div></div></div></div>
+      <div class="testi-card reveal"><div class="stars">★★★★★</div><p class="testi-text">"The edge AI works even without internet. That was a non-negotiable for us. SmartPark delivered on every promise."</p><div class="testi-author"><div class="author-avatar">SM</div><div><div class="author-name">Sarvesh Menon</div><div class="author-role">CTO, Smart City Corp Bengaluru</div></div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section" id="contact">
+  <div style="position:relative;z-index:1;">
+    <div class="section-label">// get started</div>
+    <h2>Ready to Transform Your<br><span class="gradient-text">Parking Facility?</span></h2>
+    <p style="color:var(--text-muted);margin-bottom:2.5rem;font-size:1.1rem;">Join 200+ facilities already using SmartPark AI. Setup takes under 48 hours.</p>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+      <button class="btn-primary" onclick="requireAuth('booking')">Book a Slot →</button>
+      <button class="btn-outline" onclick="showPage('auth')">Create Account</button>
+    </div>
+    <p style="margin-top:2rem;font-size:0.75rem;color:var(--text-dim);font-family:'JetBrains Mono',monospace;">Built by Surjith Raj S · Smart Parking Management System · B.Tech CSE Final Year Project</p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="logo" style="font-size:1.1rem;"><div class="logo-icon" style="width:24px;height:24px;font-size:12px;">🅿</div>SmartPark AI</div>
+    <div class="footer-links">
+      <a onclick="document.getElementById('features').scrollIntoView({behavior:'smooth'})">Features</a>
+      <a onclick="document.getElementById('pricing').scrollIntoView({behavior:'smooth'})">Pricing</a>
+      <a onclick="document.getElementById('how-it-works').scrollIntoView({behavior:'smooth'})">How It Works</a>
+      <a onclick="showPage('auth')">Login</a>
+    </div>
+    <div class="footer-copy">© 2025 SmartPark AI. All rights reserved.</div>
+  </div>
+</footer>
+</div><!-- /mainPage -->
+
+
+<!-- ══════════════════════════════════════
+     AUTH PAGE (LOGIN / REGISTER)
+══════════════════════════════════════ -->
+<div class="page-overlay" id="authPage">
+  <div class="auth-page">
+    <!-- Visual Side -->
+    <div class="auth-visual">
+      <div class="auth-visual-bg"></div>
+      <div class="auth-visual-grid"></div>
+      <div class="auth-car-showcase" style="position:relative;z-index:1;">
+        <div class="auth-brand">
+          <div class="logo-icon" style="width:36px;height:36px;font-size:18px;">🅿</div>
+          SmartPark AI
+        </div>
+        <div class="auth-tagline">The intelligent parking platform for modern cities.</div>
+
+        <!-- Large SVG Car -->
+        <svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg" style="width:100%;filter:drop-shadow(0 15px 30px rgba(0,245,212,0.15));margin-bottom:1.5rem;">
+          <defs>
+            <linearGradient id="bg2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#1a4a7c"/><stop offset="100%" style="stop-color:#0d2b4e"/></linearGradient>
+            <linearGradient id="roof2" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#2060a0"/><stop offset="100%" style="stop-color:#1a4a7c"/></linearGradient>
+          </defs>
+          <ellipse cx="200" cy="200" rx="145" ry="10" fill="rgba(0,0,0,0.4)"/>
+          <!-- Body -->
+          <rect x="30" y="140" width="340" height="58" rx="10" fill="url(#bg2)" stroke="rgba(0,245,212,0.25)" stroke-width="1"/>
+          <!-- Roof -->
+          <path d="M110 140 Q125 100 155 95 L245 95 Q275 100 290 140Z" fill="url(#roof2)" stroke="rgba(0,245,212,0.2)" stroke-width="1"/>
+          <!-- Windows -->
+          <path d="M120 138 Q130 110 155 103 L192 103 L192 138Z" fill="rgba(0,245,212,0.07)" stroke="rgba(0,245,212,0.3)" stroke-width="1.5"/>
+          <path d="M197 138 L197 103 L245 103 Q272 110 278 138Z" fill="rgba(0,245,212,0.07)" stroke="rgba(0,245,212,0.3)" stroke-width="1.5"/>
+          <line x1="196" y1="103" x2="196" y2="138" stroke="rgba(0,245,212,0.35)" stroke-width="2"/>
+          <!-- Bumper -->
+          <rect x="30" y="178" width="340" height="8" rx="4" fill="rgba(0,245,212,0.07)"/>
+          <!-- Lights front -->
+          <ellipse cx="62" cy="162" rx="20" ry="10" fill="#07111f" stroke="rgba(0,245,212,0.5)" stroke-width="1.5"/>
+          <ellipse cx="62" cy="162" rx="12" ry="6" fill="rgba(0,245,212,0.12)"/>
+          <ellipse cx="62" cy="162" rx="5" ry="2.5" fill="rgba(0,245,212,0.7)"/>
+          <!-- Beam -->
+          <path d="M42 158 L5 148 L5 170 L42 165Z" fill="rgba(0,245,212,0.04)"/>
+          <!-- Lights rear -->
+          <ellipse cx="338" cy="162" rx="20" ry="10" fill="#07111f" stroke="rgba(239,68,68,0.5)" stroke-width="1.5"/>
+          <ellipse cx="338" cy="162" rx="12" ry="6" fill="rgba(239,68,68,0.12)"/>
+          <ellipse cx="338" cy="162" rx="5" ry="2.5" fill="rgba(239,68,68,0.7)"/>
+          <!-- Door lines -->
+          <line x1="148" y1="142" x2="148" y2="195" stroke="rgba(255,255,255,0.07)" stroke-width="1.5"/>
+          <line x1="252" y1="142" x2="252" y2="195" stroke="rgba(255,255,255,0.07)" stroke-width="1.5"/>
+          <!-- Handles -->
+          <rect x="178" y="165" width="18" height="4" rx="2" fill="rgba(0,245,212,0.35)"/>
+          <rect x="215" y="165" width="18" height="4" rx="2" fill="rgba(0,245,212,0.35)"/>
+          <!-- Wheels -->
+          <circle cx="110" cy="197" r="24" fill="#06101a" stroke="rgba(0,245,212,0.35)" stroke-width="2"/>
+          <circle cx="110" cy="197" r="17" fill="#0b1827"/>
+          <circle cx="110" cy="197" r="10" fill="#07121f" stroke="rgba(0,245,212,0.4)" stroke-width="1"/>
+          <circle cx="110" cy="197" r="3.5" fill="rgba(0,245,212,0.6)"/>
+          <line x1="110" y1="180" x2="110" y2="214" stroke="rgba(0,245,212,0.25)" stroke-width="1.5"/>
+          <line x1="93" y1="197" x2="127" y2="197" stroke="rgba(0,245,212,0.25)" stroke-width="1.5"/>
+          <line x1="98" y1="185" x2="122" y2="209" stroke="rgba(0,245,212,0.15)" stroke-width="1.5"/>
+          <line x1="98" y1="209" x2="122" y2="185" stroke="rgba(0,245,212,0.15)" stroke-width="1.5"/>
+
+          <circle cx="290" cy="197" r="24" fill="#06101a" stroke="rgba(0,245,212,0.35)" stroke-width="2"/>
+          <circle cx="290" cy="197" r="17" fill="#0b1827"/>
+          <circle cx="290" cy="197" r="10" fill="#07121f" stroke="rgba(0,245,212,0.4)" stroke-width="1"/>
+          <circle cx="290" cy="197" r="3.5" fill="rgba(0,245,212,0.6)"/>
+          <line x1="290" y1="180" x2="290" y2="214" stroke="rgba(0,245,212,0.25)" stroke-width="1.5"/>
+          <line x1="273" y1="197" x2="307" y2="197" stroke="rgba(0,245,212,0.25)" stroke-width="1.5"/>
+          <line x1="278" y1="185" x2="302" y2="209" stroke="rgba(0,245,212,0.15)" stroke-width="1.5"/>
+          <line x1="278" y1="209" x2="302" y2="185" stroke="rgba(0,245,212,0.15)" stroke-width="1.5"/>
+          <!-- Plate -->
+          <rect x="160" y="182" width="80" height="16" rx="2" fill="#e8e8e8"/>
+          <text x="200" y="194" text-anchor="middle" font-family="monospace" font-size="8.5" font-weight="bold" fill="#1a1a2e">TN09 AB 1234</text>
+          <!-- Roof antenna -->
+          <line x1="200" y1="95" x2="200" y2="78" stroke="rgba(0,245,212,0.4)" stroke-width="1.5"/>
+          <circle cx="200" cy="76" r="3" fill="rgba(0,245,212,0.5)"/>
+        </svg>
+
+        <!-- Floating electric SUV -->
+        <svg viewBox="0 0 400 130" xmlns="http://www.w3.org/2000/svg" style="width:85%;display:block;margin:0 auto;filter:drop-shadow(0 10px 20px rgba(124,58,237,0.2));">
+          <defs>
+            <linearGradient id="suv1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#2d1b69"/><stop offset="100%" style="stop-color:#1a0e3d"/></linearGradient>
+          </defs>
+          <ellipse cx="200" cy="120" rx="130" ry="8" fill="rgba(0,0,0,0.3)"/>
+          <!-- SUV Body (taller) -->
+          <rect x="35" y="65" width="330" height="55" rx="6" fill="url(#suv1)" stroke="rgba(124,58,237,0.3)" stroke-width="1"/>
+          <!-- SUV Roof (boxy) -->
+          <rect x="75" y="30" width="250" height="38" rx="6" fill="#241260" stroke="rgba(124,58,237,0.2)" stroke-width="1"/>
+          <!-- Windows -->
+          <rect x="83" y="34" width="70" height="30" rx="3" fill="rgba(124,58,237,0.08)" stroke="rgba(124,58,237,0.3)" stroke-width="1.2"/>
+          <rect x="162" y="34" width="80" height="30" rx="3" fill="rgba(124,58,237,0.08)" stroke="rgba(124,58,237,0.3)" stroke-width="1.2"/>
+          <rect x="251" y="34" width="66" height="30" rx="3" fill="rgba(124,58,237,0.08)" stroke="rgba(124,58,237,0.3)" stroke-width="1.2"/>
+          <!-- Lights -->
+          <rect x="38" y="75" width="25" height="10" rx="2" fill="#0a0519" stroke="rgba(124,58,237,0.5)" stroke-width="1"/>
+          <rect x="40" y="77" width="20" height="6" rx="1" fill="rgba(124,58,237,0.4)"/>
+          <rect x="337" y="75" width="25" height="10" rx="2" fill="#0a0519" stroke="rgba(239,68,68,0.5)" stroke-width="1"/>
+          <rect x="338" y="77" width="20" height="6" rx="1" fill="rgba(239,68,68,0.5)"/>
+          <!-- Wheels -->
+          <circle cx="105" cy="118" r="20" fill="#070e1a" stroke="rgba(124,58,237,0.4)" stroke-width="2"/>
+          <circle cx="105" cy="118" r="13" fill="#0c1428"/>
+          <circle cx="105" cy="118" r="5" fill="rgba(124,58,237,0.6)"/>
+          <circle cx="295" cy="118" r="20" fill="#070e1a" stroke="rgba(124,58,237,0.4)" stroke-width="2"/>
+          <circle cx="295" cy="118" r="13" fill="#0c1428"/>
+          <circle cx="295" cy="118" r="5" fill="rgba(124,58,237,0.6)"/>
+          <!-- EV badge -->
+          <rect x="172" y="72" width="56" height="18" rx="3" fill="rgba(124,58,237,0.2)" stroke="rgba(124,58,237,0.5)" stroke-width="1"/>
+          <text x="200" y="84" text-anchor="middle" font-family="monospace" font-size="9" fill="#a78bfa" font-weight="bold">⚡ ELECTRIC</text>
+        </svg>
+
+        <div class="auth-stats">
+          <div class="auth-stat"><div class="auth-stat-num">50K+</div><div class="auth-stat-label">Slots Managed</div></div>
+          <div class="auth-stat"><div class="auth-stat-num">42</div><div class="auth-stat-label">Cities</div></div>
+          <div class="auth-stat"><div class="auth-stat-num">99.9%</div><div class="auth-stat-label">Uptime</div></div>
+          <div class="auth-stat"><div class="auth-stat-num">₹18K+</div><div class="auth-stat-label">Daily Revenue</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Form Side -->
+    <div class="auth-form-panel">
+      <div class="auth-form-box">
+        <span class="back-link" onclick="showPage('main')">← Back to Home</span>
+        <div class="auth-title">Welcome Back</div>
+        <div class="auth-sub">Sign in to manage your parking slots.</div>
+
+        <div class="auth-tabs">
+          <div class="auth-tab active" id="loginTab" onclick="switchTab('login')">Sign In</div>
+          <div class="auth-tab" id="registerTab" onclick="switchTab('register')">Register</div>
+        </div>
+
+        <!-- LOGIN FORM -->
+        <div id="loginForm">
+          <div class="form-group">
+            <label class="form-label">Email Address</label>
+            <input type="email" class="form-input" id="loginEmail" placeholder="you@example.com" autocomplete="email"/>
+            <div class="form-error" id="loginEmailErr">Please enter a valid email.</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input type="password" class="form-input" id="loginPass" placeholder="••••••••" autocomplete="current-password"/>
+            <div class="form-error" id="loginPassErr">Invalid credentials.</div>
+          </div>
+          <div style="display:flex;justify-content:flex-end;margin-bottom:1rem;"><span style="font-size:0.8rem;color:var(--cyan);cursor:pointer;">Forgot password?</span></div>
+          <button class="auth-btn" onclick="handleLogin()">Sign In →</button>
+          <div class="auth-divider">or continue with</div>
+          <div class="social-btns">
+            <button class="social-btn" onclick="socialLogin('Google')">🌐 Google</button>
+            <button class="social-btn" onclick="socialLogin('GitHub')">🐙 GitHub</button>
+          </div>
+          <p style="text-align:center;margin-top:1.5rem;font-size:0.82rem;color:var(--text-muted);">No account? <span style="color:var(--cyan);cursor:pointer;" onclick="switchTab('register')">Register free →</span></p>
+        </div>
+
+        <!-- REGISTER FORM -->
+        <div id="registerForm" style="display:none;">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">First Name</label>
+              <input type="text" class="form-input" id="regFirst" placeholder="Surjith"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Last Name</label>
+              <input type="text" class="form-input" id="regLast" placeholder="Raj"/>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email Address</label>
+            <input type="email" class="form-input" id="regEmail" placeholder="you@example.com"/>
+            <div class="form-error" id="regEmailErr">Email already registered.</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phone Number</label>
+            <input type="tel" class="form-input" id="regPhone" placeholder="+91 98765 43210"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Vehicle Number</label>
+            <input type="text" class="form-input" id="regVehicle" placeholder="TN09 AB 1234" style="text-transform:uppercase;"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input type="password" class="form-input" id="regPass" placeholder="Min 8 characters"/>
+            <div class="form-error" id="regPassErr">Password must be at least 8 characters.</div>
+          </div>
+          <button class="auth-btn" onclick="handleRegister()">Create Account →</button>
+          <p style="text-align:center;margin-top:1.5rem;font-size:0.82rem;color:var(--text-muted);">Already have an account? <span style="color:var(--cyan);cursor:pointer;" onclick="switchTab('login')">Sign in →</span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     BOOKING PAGE
+══════════════════════════════════════ -->
+<div class="page-overlay" id="bookingPage">
+  <div class="booking-page">
+    <div style="max-width:1100px;margin:0 auto;">
+      <span class="back-link" onclick="showPage('main')">← Back to Home</span>
+      <div class="section-label">// reserve a slot</div>
+      <h1 class="section-title">Book Your Parking Slot</h1>
+      <p style="color:var(--text-muted);">Select a free slot below, choose your duration, and proceed to payment.</p>
+
+      <div class="booking-grid">
+        <!-- Map -->
+        <div>
+          <div class="booking-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+              <div>
+                <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem;">Level B2 — Main Facility</div>
+                <div style="font-size:0.75rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace;">Click a GREEN slot to select</div>
+              </div>
+              <div style="display:flex;gap:0.5rem;align-items:center;font-size:0.72rem;color:var(--green);">
+                <span class="live-dot"></span> LIVE
+              </div>
+            </div>
+            <div class="booking-slot-grid" id="bookingGrid"></div>
+            <div class="lot-legend" style="margin-top:1rem;">
+              <div class="legend-item"><div class="legend-dot" style="background:rgba(34,197,94,0.6)"></div>Free (Click to select)</div>
+              <div class="legend-item"><div class="legend-dot" style="background:rgba(239,68,68,0.6)"></div>Occupied</div>
+              <div class="legend-item"><div class="legend-dot" style="background:rgba(0,245,212,0.6)"></div>EV Charging</div>
+              <div class="legend-item"><div class="legend-dot" style="background:rgba(139,92,246,0.6)"></div>Disabled</div>
+            </div>
+          </div>
+
+          <!-- Duration -->
+          <div class="booking-card" style="margin-top:1.5rem;">
+            <div style="font-family:'Syne',sans-serif;font-weight:700;margin-bottom:1rem;">Select Duration</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;" id="durationPicker">
+              <div class="upi-app" onclick="selectDuration(1,this)" data-hours="1"><div class="upi-app-icon">1h</div><div class="upi-app-name">₹50</div></div>
+              <div class="upi-app" onclick="selectDuration(2,this)" data-hours="2"><div class="upi-app-icon">2h</div><div class="upi-app-name">₹95</div></div>
+              <div class="upi-app selected" onclick="selectDuration(3,this)" data-hours="3"><div class="upi-app-icon">3h</div><div class="upi-app-name">₹135</div></div>
+              <div class="upi-app" onclick="selectDuration(6,this)" data-hours="6"><div class="upi-app-icon">6h</div><div class="upi-app-name">₹240</div></div>
+            </div>
+            <div style="margin-top:1rem;">
+              <label class="form-label">Vehicle Number</label>
+              <input type="text" class="form-input" id="bookVehicle" placeholder="TN09 AB 1234" style="text-transform:uppercase;margin-top:0.4rem;"/>
+            </div>
+          </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="booking-summary">
+          <div class="booking-card">
+            <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem;margin-bottom:1.5rem;">Booking Summary</div>
+
+            <!-- Mini car SVG -->
+            <div style="text-align:center;margin-bottom:1.5rem;">
+              <svg viewBox="0 0 200 90" xmlns="http://www.w3.org/2000/svg" style="width:180px;">
+                <ellipse cx="100" cy="82" rx="70" ry="5" fill="rgba(0,0,0,0.3)"/>
+                <rect x="20" y="48" width="160" height="35" rx="6" fill="#0d2137" stroke="rgba(0,245,212,0.2)" stroke-width="1"/>
+                <path d="M55 48 Q63 22 78 18 L122 18 Q137 22 145 48Z" fill="#112d4a" stroke="rgba(0,245,212,0.15)" stroke-width="1"/>
+                <path d="M62 47 Q68 28 80 23 L98 23 L98 47Z" fill="rgba(0,245,212,0.06)" stroke="rgba(0,245,212,0.2)" stroke-width="1"/>
+                <path d="M102 47 L102 23 L120 23 Q132 28 138 47Z" fill="rgba(0,245,212,0.06)" stroke="rgba(0,245,212,0.2)" stroke-width="1"/>
+                <ellipse cx="42" cy="62" rx="12" ry="6" fill="#07111f" stroke="rgba(0,245,212,0.4)" stroke-width="1"/>
+                <ellipse cx="42" cy="62" rx="5" ry="2.5" fill="rgba(0,245,212,0.5)"/>
+                <circle cx="57" cy="81" r="13" fill="#06101a" stroke="rgba(0,245,212,0.4)" stroke-width="1.5"/>
+                <circle cx="57" cy="81" r="8" fill="#0b1827"/>
+                <circle cx="57" cy="81" r="3" fill="rgba(0,245,212,0.5)"/>
+                <circle cx="143" cy="81" r="13" fill="#06101a" stroke="rgba(0,245,212,0.4)" stroke-width="1.5"/>
+                <circle cx="143" cy="81" r="8" fill="#0b1827"/>
+                <circle cx="143" cy="81" r="3" fill="rgba(0,245,212,0.5)"/>
+                <rect x="80" y="64" width="40" height="11" rx="2" fill="#e8e8e8"/>
+                <text x="100" y="73" text-anchor="middle" font-family="monospace" font-size="6" font-weight="bold" fill="#1a1a2e" id="bookPlatePreview">TN09 AB 1234</text>
+              </svg>
+            </div>
+
+            <div>
+              <div class="summary-row"><span style="color:var(--text-muted);">Selected Slot</span><span id="sumSlot" style="color:var(--cyan);font-family:'JetBrains Mono',monospace;">— None —</span></div>
+              <div class="summary-row"><span style="color:var(--text-muted);">Duration</span><span id="sumDur">3 Hours</span></div>
+              <div class="summary-row"><span style="color:var(--text-muted);">Parking Fee</span><span id="sumBase">₹135</span></div>
+              <div class="summary-row"><span style="color:var(--text-muted);">GST (18%)</span><span id="sumGst">₹24</span></div>
+              <div class="summary-row total"><span>Total Amount</span><span id="sumTotal">₹159</span></div>
+            </div>
+            <button class="btn-primary" style="width:100%;margin-top:1.5rem;text-align:center;" onclick="proceedToPayment()">Proceed to Payment →</button>
+            <p style="font-size:0.72rem;color:var(--text-muted);text-align:center;margin-top:0.75rem;">🔒 Secured by SmartPark Payment Gateway</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     PAYMENT PAGE
+══════════════════════════════════════ -->
+<div class="page-overlay" id="paymentPage">
+  <div class="payment-page">
+    <div class="payment-container">
+      <span class="back-link" onclick="showPage('booking')">← Back to Booking</span>
+      <div class="section-label">// secure checkout</div>
+      <h1 class="section-title">Complete Payment</h1>
+
+      <div class="payment-grid">
+        <!-- Methods -->
+        <div class="payment-methods">
+          <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem;margin-bottom:1.5rem;">Choose Payment Method</div>
+          <div class="method-tabs">
+            <button class="method-tab active" onclick="switchMethod('upi',this)">📱 UPI</button>
+            <button class="method-tab" onclick="switchMethod('card',this)">💳 Card</button>
+            <button class="method-tab" onclick="switchMethod('wallet',this)">👛 Wallet</button>
+            <button class="method-tab" onclick="switchMethod('netbanking',this)">🏦 Net Banking</button>
+            <button class="method-tab" onclick="switchMethod('fastag',this)">🚗 FASTag</button>
+          </div>
+
+          <!-- UPI -->
+          <div class="method-content active" id="method-upi">
+            <div style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1rem;">Select your UPI app</div>
+            <div class="upi-apps">
+              <div class="upi-app selected" onclick="selectUpiApp(this)"><div class="upi-app-icon">🟢</div><div class="upi-app-name">GPay</div></div>
+              <div class="upi-app" onclick="selectUpiApp(this)"><div class="upi-app-icon">🔵</div><div class="upi-app-name">PhonePe</div></div>
+              <div class="upi-app" onclick="selectUpiApp(this)"><div class="upi-app-icon">🟣</div><div class="upi-app-name">Paytm</div></div>
+              <div class="upi-app" onclick="selectUpiApp(this)"><div class="upi-app-icon">🟠</div><div class="upi-app-name">BHIM</div></div>
+            </div>
+            <div class="form-group" style="margin-top:1rem;">
+              <label class="form-label">UPI ID</label>
+              <input type="text" class="form-input" id="upiId" placeholder="yourname@upi"/>
+            </div>
+            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:1.25rem;text-align:center;margin-top:1rem;">
+              <!-- QR Code SVG -->
+              <svg viewBox="0 0 120 120" width="110" height="110" style="display:block;margin:0 auto 0.5rem;">
+                <rect width="120" height="120" fill="#e8e8e8" rx="8"/>
+                <!-- Fake QR pattern -->
+                <rect x="10" y="10" width="30" height="30" fill="#1a1a2e" rx="2"/>
+                <rect x="14" y="14" width="22" height="22" fill="#e8e8e8" rx="1"/>
+                <rect x="18" y="18" width="14" height="14" fill="#1a1a2e" rx="1"/>
+                <rect x="80" y="10" width="30" height="30" fill="#1a1a2e" rx="2"/>
+                <rect x="84" y="14" width="22" height="22" fill="#e8e8e8" rx="1"/>
+                <rect x="88" y="18" width="14" height="14" fill="#1a1a2e" rx="1"/>
+                <rect x="10" y="80" width="30" height="30" fill="#1a1a2e" rx="2"/>
+                <rect x="14" y="84" width="22" height="22" fill="#e8e8e8" rx="1"/>
+                <rect x="18" y="88" width="14" height="14" fill="#1a1a2e" rx="1"/>
+                <rect x="50" y="10" width="8" height="8" fill="#1a1a2e"/>
+                <rect x="62" y="10" width="8" height="8" fill="#1a1a2e"/>
+                <rect x="50" y="22" width="8" height="8" fill="#1a1a2e"/>
+                <rect x="62" y="22" width="8" height="8" fill="#1a1a2e"/>
+                <rect x="50" y="50" width="8" height="8" fill="#1a1a2e"/>
+                <rect x="62" y="50" width="8" height="8" fill="#1a1a2e"/>
+                <rect x="74" y="50" width="8" height="8" fill="#1a1a2e"/>
+                <rect x="10" y="50" width="8" height="8" fill="#1a1a2e"/>
+                <rect x="22" y="50" width="8" height="8" fill="#1a1a2e"/>
+                <rect x="34" y="50" width="8" height="8" fill="#1a1a2e"/>
+                <rect x="50" y="62" width="8" height="8" fill="#1a1a2e"/>
+                <rect x="74" y="62" width="8" height="8" fill="#1a1a2e"/>
+                <rect x="86" y="62" width="8" height="8" fill="#1a1a2e"/>
+                <rect x="50" y="74" width="8" height="8" fill="#1a1a2e"/>
+                <rect x="62" y="74" width="8" height="8" fill="#1a1a2e"/>
+                <rect x="86" y="74" width="8" height="8" fill="#1a1a2e"/>
+                <rect x="62" y="86" width="8" height="8" fill="#1a1a2e"/>
+                <rect x="86" y="86" width="8" height="8" fill="#1a1a2e"/>
+                <rect x="98" y="86" width="8" height="8" fill="#1a1a2e"/>
+                <rect x="98" y="50" width="8" height="8" fill="#1a1a2e"/>
+                <rect x="98" y="38" width="8" height="8" fill="#1a1a2e"/>
+              </svg>
+              <div style="font-size:0.72rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace;">smartpark@upi · Scan to pay</div>
+            </div>
+          </div>
+
+          <!-- CARD -->
+          <div class="method-content" id="method-card">
+            <div class="card-preview">
+              <div class="card-chip"></div>
+              <div class="card-number-preview" id="cardNumPreview">•••• •••• •••• ••••</div>
+              <div class="card-meta">
+                <div><div style="font-size:0.6rem;opacity:0.6;margin-bottom:2px;">CARD HOLDER</div><div id="cardNamePreview">YOUR NAME</div></div>
+                <div><div style="font-size:0.6rem;opacity:0.6;margin-bottom:2px;">EXPIRES</div><div id="cardExpPreview">MM/YY</div></div>
+                <div style="font-size:1.5rem;">💳</div>
+              </div>
+            </div>
+            <div class="card-form">
+              <div class="form-group">
+                <label class="form-label">Card Number</label>
+                <input type="text" class="form-input" id="cardNum" placeholder="1234 5678 9012 3456" maxlength="19" oninput="formatCard(this)"/>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Cardholder Name</label>
+                <input type="text" class="form-input" id="cardName" placeholder="SURJITH RAJ S" style="text-transform:uppercase;" oninput="document.getElementById('cardNamePreview').textContent=this.value.toUpperCase()||'YOUR NAME'"/>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Expiry (MM/YY)</label>
+                  <input type="text" class="form-input" id="cardExp" placeholder="08/26" maxlength="5" oninput="formatExp(this)"/>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">CVV</label>
+                  <input type="password" class="form-input" id="cardCvv" placeholder="•••" maxlength="3"/>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- WALLET -->
+          <div class="method-content" id="method-wallet">
+            <div style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1rem;">Select your wallet</div>
+            <div class="wallet-options">
+              <div class="wallet-opt selected" onclick="selectWallet(this)"><div class="wallet-icon">🟢</div><div><div class="wallet-name">Paytm Wallet</div><div class="wallet-bal">Balance: ₹1,250</div></div></div>
+              <div class="wallet-opt" onclick="selectWallet(this)"><div class="wallet-icon">🔵</div><div><div class="wallet-name">PhonePe Wallet</div><div class="wallet-bal">Balance: ₹890</div></div></div>
+              <div class="wallet-opt" onclick="selectWallet(this)"><div class="wallet-icon">🟠</div><div><div class="wallet-name">Amazon Pay</div><div class="wallet-bal">Balance: ₹500</div></div></div>
+              <div class="wallet-opt" onclick="selectWallet(this)"><div class="wallet-icon">🟣</div><div><div class="wallet-name">Mobikwik</div><div class="wallet-bal">Balance: ₹320</div></div></div>
+            </div>
+          </div>
+
+          <!-- NET BANKING -->
+          <div class="method-content" id="method-netbanking">
+            <div style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1rem;">Select your bank</div>
+            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0.75rem;" id="bankList">
+              <div class="wallet-opt selected" onclick="selectBank(this)"><div class="wallet-icon">🏦</div><div><div class="wallet-name">SBI</div></div></div>
+              <div class="wallet-opt" onclick="selectBank(this)"><div class="wallet-icon">🏦</div><div><div class="wallet-name">HDFC Bank</div></div></div>
+              <div class="wallet-opt" onclick="selectBank(this)"><div class="wallet-icon">🏦</div><div><div class="wallet-name">ICICI Bank</div></div></div>
+              <div class="wallet-opt" onclick="selectBank(this)"><div class="wallet-icon">🏦</div><div><div class="wallet-name">Axis Bank</div></div></div>
+              <div class="wallet-opt" onclick="selectBank(this)"><div class="wallet-icon">🏦</div><div><div class="wallet-name">Kotak Bank</div></div></div>
+              <div class="wallet-opt" onclick="selectBank(this)"><div class="wallet-icon">🏦</div><div><div class="wallet-name">Bank of Baroda</div></div></div>
+            </div>
+          </div>
+
+          <!-- FASTAG -->
+          <div class="method-content" id="method-fastag">
+            <div style="background:var(--bg3);border:1px solid rgba(0,245,212,0.2);border-radius:12px;padding:2rem;text-align:center;">
+              <div style="font-size:3rem;margin-bottom:1rem;">🚗</div>
+              <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem;margin-bottom:0.5rem;">FASTag Auto Payment</div>
+              <p style="font-size:0.85rem;color:var(--text-muted);">Payment will be automatically deducted from your linked FASTag account when you exit the parking facility.</p>
+              <div style="margin-top:1.5rem;background:rgba(0,245,212,0.06);border:1px solid rgba(0,245,212,0.2);border-radius:8px;padding:1rem;">
+                <div style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--cyan);">LINKED FASTAG</div>
+                <div style="font-size:0.9rem;margin-top:0.25rem;" id="fastagVehicle">TN09 AB 1234</div>
+                <div style="font-size:0.8rem;color:var(--green);margin-top:0.25rem;">Balance: ₹2,400 ✓</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="payment-summary-box">
+          <div class="pay-summary-title">Order Summary</div>
+
+          <!-- Tiny car -->
+          <div style="text-align:center;margin-bottom:1.25rem;padding:1rem;background:var(--bg3);border-radius:10px;border:1px solid var(--border);">
+            <svg viewBox="0 0 160 70" xmlns="http://www.w3.org/2000/svg" style="width:140px;">
+              <ellipse cx="80" cy="64" rx="56" ry="4" fill="rgba(0,0,0,0.3)"/>
+              <rect x="16" y="38" width="128" height="27" rx="5" fill="#0d2137" stroke="rgba(0,245,212,0.2)" stroke-width="1"/>
+              <path d="M44 38 Q50 18 62 15 L98 15 Q110 18 116 38Z" fill="#112d4a" stroke="rgba(0,245,212,0.15)" stroke-width="1"/>
+              <path d="M50 37 Q54 22 63 18 L77 18 L77 37Z" fill="rgba(0,245,212,0.06)" stroke="rgba(0,245,212,0.2)" stroke-width="1"/>
+              <path d="M81 37 L81 18 L97 18 Q106 22 110 37Z" fill="rgba(0,245,212,0.06)" stroke="rgba(0,245,212,0.2)" stroke-width="1"/>
+              <ellipse cx="32" cy="48" rx="9" ry="5" fill="#07111f" stroke="rgba(0,245,212,0.4)" stroke-width="1"/>
+              <ellipse cx="32" cy="48" rx="4" ry="2" fill="rgba(0,245,212,0.5)"/>
+              <circle cx="44" cy="63" r="10" fill="#06101a" stroke="rgba(0,245,212,0.4)" stroke-width="1.5"/>
+              <circle cx="44" cy="63" r="6" fill="#0b1827"/>
+              <circle cx="44" cy="63" r="2.5" fill="rgba(0,245,212,0.5)"/>
+              <circle cx="116" cy="63" r="10" fill="#06101a" stroke="rgba(0,245,212,0.4)" stroke-width="1.5"/>
+              <circle cx="116" cy="63" r="6" fill="#0b1827"/>
+              <circle cx="116" cy="63" r="2.5" fill="rgba(0,245,212,0.5)"/>
+              <rect x="63" y="50" width="34" height="9" rx="2" fill="#e8e8e8"/>
+              <text x="80" y="58" text-anchor="middle" font-family="monospace" font-size="5" font-weight="bold" fill="#1a1a2e" id="payPlatePreview">TN09 AB 1234</text>
+            </svg>
+            <div style="font-size:0.72rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace;margin-top:0.5rem;" id="paySlotPreview">Slot: B2-14</div>
+          </div>
+
+          <div class="pay-row"><span style="color:var(--text-muted);">Parking Slot</span><span id="paySlot" style="font-family:'JetBrains Mono',monospace;color:var(--cyan);">B2-14</span></div>
+          <div class="pay-row"><span style="color:var(--text-muted);">Duration</span><span id="payDur">3 Hours</span></div>
+          <div class="pay-row"><span style="color:var(--text-muted);">Vehicle</span><span id="payVehicle" style="font-family:'JetBrains Mono',monospace;">TN09 AB 1234</span></div>
+          <div class="pay-row"><span style="color:var(--text-muted);">Parking Fee</span><span id="payBase">₹135</span></div>
+          <div class="pay-row"><span style="color:var(--text-muted);">GST (18%)</span><span id="payGst">₹24</span></div>
+          <div class="pay-row pay-total"><span>Total</span><span id="payTotal">₹159</span></div>
+
+          <button class="pay-now-btn" id="payNowBtn" onclick="processPayment()">Pay Now →</button>
+          <div class="security-note">🔒 256-bit SSL Encrypted · PCI DSS Compliant</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     USER DASHBOARD
+══════════════════════════════════════ -->
+<div class="page-overlay" id="userDashPage">
+  <div class="user-dashboard">
+    <div class="container">
+      <span class="back-link" onclick="showPage('main')">← Back to Home</span>
+      <div class="dashboard-header">
+        <div>
+          <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;font-family:'JetBrains Mono',monospace;margin-bottom:0.25rem;">// my account</div>
+          <div class="dash-welcome" id="dashWelcome">Welcome, Surjith 👋</div>
+        </div>
+        <button class="btn-primary btn-sm" onclick="showPage('booking')">+ Book New Slot</button>
+      </div>
+
+      <!-- Summary Cards -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1.25rem;margin-bottom:2rem;">
+        <div class="metric-card"><div class="metric-info"><span class="metric-label">Total Bookings</span><span class="metric-value" id="dashTotalBookings">0</span></div><div class="metric-icon icon-cyan">📋</div></div>
+        <div class="metric-card"><div class="metric-info"><span class="metric-label">Active Now</span><span class="metric-value" id="dashActive">0</span></div><div class="metric-icon icon-green">🟢</div></div>
+        <div class="metric-card"><div class="metric-info"><span class="metric-label">Total Spent</span><span class="metric-value" id="dashSpent">₹0</span></div><div class="metric-icon icon-gold">💰</div></div>
+        <div class="metric-card"><div class="metric-info"><span class="metric-label">Saved vs Avg</span><span class="metric-value" style="color:var(--green);">12%</span></div><div class="metric-icon icon-green">📈</div></div>
+      </div>
+
+      <!-- Account Info -->
+      <div style="display:grid;grid-template-columns:1fr 2fr;gap:1.5rem;margin-bottom:2rem;">
+        <div class="booking-card" style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:1.75rem;">
+          <div style="font-family:'Syne',sans-serif;font-weight:700;margin-bottom:1.25rem;">Account Details</div>
+          <div style="text-align:center;margin-bottom:1.25rem;">
+            <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--electric),var(--cyan-dim));display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:700;color:white;margin:0 auto 0.75rem;" id="dashAvatar">S</div>
+            <div style="font-weight:600;" id="dashName">Surjith Raj S</div>
+            <div style="font-size:0.8rem;color:var(--text-muted);" id="dashEmail">surjith@example.com</div>
+          </div>
+          <div style="font-size:0.8rem;">
+            <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid var(--border);"><span style="color:var(--text-muted);">Phone</span><span id="dashPhone">+91 98765 43210</span></div>
+            <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid var(--border);"><span style="color:var(--text-muted);">Vehicle</span><span style="font-family:'JetBrains Mono',monospace;color:var(--cyan);" id="dashVehicle">TN09 AB 1234</span></div>
+            <div style="display:flex;justify-content:space-between;padding:0.5rem 0;"><span style="color:var(--text-muted);">Member Since</span><span id="dashSince">Jan 2025</span></div>
+          </div>
+        </div>
+
+        <!-- Bookings Table -->
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:1.75rem;">
+          <div style="font-family:'Syne',sans-serif;font-weight:700;margin-bottom:1.25rem;">Recent Bookings</div>
+          <div style="overflow-x:auto;">
+            <table class="bookings-table" id="bookingsTable">
+              <thead><tr><th>Booking ID</th><th>Slot</th><th>Vehicle</th><th>Duration</th><th>Amount</th><th>Status</th></tr></thead>
+              <tbody id="bookingsTbody">
+                <tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:2rem;">No bookings yet. <span style="color:var(--cyan);cursor:pointer;" onclick="showPage('booking')">Book your first slot →</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+// ════════════════════════════════════════
+// DATABASE (localStorage)
+// ════════════════════════════════════════
+const DB = {
+  get: (k) => JSON.parse(localStorage.getItem('sp_'+k) || 'null'),
+  set: (k,v) => localStorage.setItem('sp_'+k, JSON.stringify(v)),
+  getUsers: () => DB.get('users') || [],
+  getBookings: () => DB.get('bookings') || [],
+  getCurrentUser: () => DB.get('currentUser'),
+  saveUsers: (u) => DB.set('users', u),
+  saveBookings: (b) => DB.set('bookings', b),
+  setCurrentUser: (u) => DB.set('currentUser', u),
+  clearCurrentUser: () => localStorage.removeItem('sp_currentUser'),
+  addUser: (user) => {
+    const users = DB.getUsers();
+    users.push(user);
+    DB.saveUsers(users);
+  },
+  addBooking: (booking) => {
+    const bks = DB.getBookings();
+    bks.push(booking);
+    DB.saveBookings(bks);
+  },
+  findUser: (email) => DB.getUsers().find(u => u.email === email),
+  getUserBookings: (userId) => DB.getBookings().filter(b => b.userId === userId),
+};
+
+// ════════════════════════════════════════
+// PAGE ROUTING
+// ════════════════════════════════════════
+function showPage(page) {
+  document.getElementById('mainPage').style.display = 'none';
+  document.getElementById('authPage').classList.remove('active');
+  document.getElementById('bookingPage').classList.remove('active');
+  document.getElementById('paymentPage').classList.remove('active');
+  document.getElementById('userDashPage').classList.remove('active');
+
+  if (page === 'main') {
+    document.getElementById('mainPage').style.display = 'block';
+    window.scrollTo(0,0);
+  } else if (page === 'auth') {
+    document.getElementById('authPage').classList.add('active');
+    authPage.scrollTo(0,0);
+  } else if (page === 'booking') {
+    document.getElementById('bookingPage').classList.add('active');
+    initBookingGrid();
+    bookingPage.scrollTo(0,0);
+  } else if (page === 'payment') {
+    document.getElementById('paymentPage').classList.add('active');
+    syncPaymentSummary();
+    paymentPage.scrollTo(0,0);
+  } else if (page === 'userdash') {
+    document.getElementById('userDashPage').classList.add('active');
+    loadUserDashboard();
+    userDashPage.scrollTo(0,0);
+  }
+}
+
+function requireAuth(dest) {
+  if (DB.getCurrentUser()) {
+    showPage(dest);
+  } else {
+    pendingDest = dest;
+    showPage('auth');
+  }
+}
+let pendingDest = 'booking';
+
+// ════════════════════════════════════════
+// AUTH
+// ════════════════════════════════════════
+function switchTab(tab) {
+  document.getElementById('loginTab').classList.toggle('active', tab==='login');
+  document.getElementById('registerTab').classList.toggle('active', tab==='register');
+  document.getElementById('loginForm').style.display = tab==='login' ? 'block' : 'none';
+  document.getElementById('registerForm').style.display = tab==='register' ? 'block' : 'none';
+}
+
+function handleLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  const emailErr = document.getElementById('loginEmailErr');
+  const passErr = document.getElementById('loginPassErr');
+  emailErr.classList.remove('show');
+  passErr.classList.remove('show');
+  if (!email || !email.includes('@')) { emailErr.classList.add('show'); return; }
+  const user = DB.findUser(email);
+  if (!user || user.password !== pass) { passErr.textContent = 'Incorrect email or password.'; passErr.classList.add('show'); return; }
+  DB.setCurrentUser(user);
+  updateNavUser(user);
+  showToast('✅ Welcome back, ' + user.firstName + '!', 'success');
+  showPage(pendingDest || 'main');
+}
+
+function handleRegister() {
+  const first = document.getElementById('regFirst').value.trim();
+  const last = document.getElementById('regLast').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const phone = document.getElementById('regPhone').value.trim();
+  const vehicle = document.getElementById('regVehicle').value.trim().toUpperCase();
+  const pass = document.getElementById('regPass').value;
+  const emailErr = document.getElementById('regEmailErr');
+  const passErr = document.getElementById('regPassErr');
+  emailErr.classList.remove('show');
+  passErr.classList.remove('show');
+  if (!email || !email.includes('@')) { emailErr.textContent='Please enter a valid email.'; emailErr.classList.add('show'); return; }
+  if (DB.findUser(email)) { emailErr.textContent='Email already registered.'; emailErr.classList.add('show'); return; }
+  if (pass.length < 8) { passErr.classList.add('show'); return; }
+  const user = { id: 'u_'+Date.now(), firstName: first||'User', lastName: last, email, phone: phone||'+91 98765 43210', vehicle: vehicle||'TN09 AB 1234', password: pass, joinDate: new Date().toLocaleDateString('en-IN', {month:'short',year:'numeric'}) };
+  DB.addUser(user);
+  DB.setCurrentUser(user);
+  updateNavUser(user);
+  showToast('🎉 Account created! Welcome, ' + user.firstName + '!', 'success');
+  if (document.getElementById('bookVehicle')) document.getElementById('bookVehicle').value = user.vehicle;
+  showPage(pendingDest || 'main');
+}
+
+function socialLogin(provider) {
+  const user = { id: 'u_'+Date.now(), firstName: 'Demo', lastName: 'User', email: 'demo@smartpark.ai', phone: '+91 98765 43210', vehicle: 'TN09 AB 1234', password: '', joinDate: new Date().toLocaleDateString('en-IN',{month:'short',year:'numeric'}) };
+  if (!DB.findUser(user.email)) DB.addUser(user);
+  DB.setCurrentUser(user);
+  updateNavUser(user);
+  showToast('✅ Signed in with '+provider, 'success');
+  showPage(pendingDest || 'main');
+}
+
+function logout() {
+  DB.clearCurrentUser();
+  updateNavUser(null);
+  showPage('main');
+  showToast('👋 Logged out successfully', 'success');
+}
+
+function updateNavUser(user) {
+  const navUser = document.getElementById('navUser');
+  const navLinks = document.getElementById('navLinks');
+  if (user) {
+    document.getElementById('navAvatar').textContent = user.firstName[0].toUpperCase();
+    document.getElementById('navUsername').textContent = user.firstName;
+    navUser.style.display = 'flex';
+    // hide login link in nav
+  } else {
+    navUser.style.display = 'none';
+  }
+}
+
+// ════════════════════════════════════════
+// BOOKING
+// ════════════════════════════════════════
+let selectedSlot = null;
+let selectedDuration = 3;
+let selectedPrice = 135;
+const slotTypes = ['free','free','free','free','occupied','occupied','reserved','ev','disabled'];
+
+function initBookingGrid() {
+  const grid = document.getElementById('bookingGrid');
+  grid.innerHTML = '';
+  for (let i = 0; i < 64; i++) {
+    let t = slotTypes[Math.floor(Math.random() * slotTypes.length)];
+    if (i < 10 && i % 3 !== 0) t = 'free'; // ensure some free spots
+    const d = document.createElement('div');
+    d.className = 'b-spot ' + t;
+    const lbl = document.createElement('div');
+    lbl.className = 'spot-label';
+    lbl.textContent = 'B'+(i+1);
+    d.appendChild(lbl);
+    const slotId = 'B2-' + String(i+1).padStart(2,'0');
+    d.title = slotId;
+    if (t === 'free' || t === 'ev') {
+      d.onclick = () => selectSlot(d, slotId);
+    }
+    grid.appendChild(d);
+  }
+  // Pre-fill vehicle
+  const user = DB.getCurrentUser();
+  if (user && document.getElementById('bookVehicle')) {
+    document.getElementById('bookVehicle').value = user.vehicle;
+    updatePlatePreview(user.vehicle);
+  }
+  document.getElementById('bookVehicle').addEventListener('input', (e) => updatePlatePreview(e.target.value));
+}
+
+function updatePlatePreview(val) {
+  const el = document.getElementById('bookPlatePreview');
+  if (el) el.textContent = val.toUpperCase() || 'TN09 AB 1234';
+}
+
+function selectSlot(el, slotId) {
+  document.querySelectorAll('.b-spot.selected').forEach(s => { s.classList.remove('selected'); s.classList.add('free'); });
+  el.classList.remove('free','ev');
+  el.classList.add('selected');
+  selectedSlot = slotId;
+  document.getElementById('sumSlot').textContent = slotId;
+  updateSummary();
+}
+
+function selectDuration(h, el) {
+  document.querySelectorAll('#durationPicker .upi-app').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedDuration = h;
+  const prices = {1:50, 2:95, 3:135, 6:240};
+  selectedPrice = prices[h];
+  updateSummary();
+}
+
+function updateSummary() {
+  const gst = Math.round(selectedPrice * 0.18);
+  const total = selectedPrice + gst;
+  document.getElementById('sumDur').textContent = selectedDuration + ' Hour' + (selectedDuration>1?'s':'');
+  document.getElementById('sumBase').textContent = '₹'+selectedPrice;
+  document.getElementById('sumGst').textContent = '₹'+gst;
+  document.getElementById('sumTotal').textContent = '₹'+total;
+}
+
+function proceedToPayment() {
+  if (!selectedSlot) { showToast('⚠ Please select a parking slot', 'error'); return; }
+  const vehicle = document.getElementById('bookVehicle').value.trim().toUpperCase();
+  if (!vehicle) { showToast('⚠ Please enter your vehicle number', 'error'); return; }
+  bookingData = { slot: selectedSlot, duration: selectedDuration, price: selectedPrice, vehicle, gst: Math.round(selectedPrice*0.18), total: selectedPrice + Math.round(selectedPrice*0.18) };
+  showPage('payment');
+}
+
+let bookingData = {};
+
+function syncPaymentSummary() {
+  if (!bookingData.slot) return;
+  document.getElementById('paySlot').textContent = bookingData.slot;
+  document.getElementById('payDur').textContent = bookingData.duration + ' Hour' + (bookingData.duration>1?'s':'');
+  document.getElementById('payVehicle').textContent = bookingData.vehicle;
+  document.getElementById('payBase').textContent = '₹'+bookingData.price;
+  document.getElementById('payGst').textContent = '₹'+bookingData.gst;
+  document.getElementById('payTotal').textContent = '₹'+bookingData.total;
+  document.getElementById('paySlotPreview').textContent = 'Slot: '+bookingData.slot;
+  document.getElementById('payPlatePreview').textContent = bookingData.vehicle;
+  document.getElementById('fastagVehicle').textContent = bookingData.vehicle;
+}
+
+// ════════════════════════════════════════
+// PAYMENT
+// ════════════════════════════════════════
+function switchMethod(m, el) {
+  document.querySelectorAll('.method-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.method-content').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('method-'+m).classList.add('active');
+}
+
+function selectUpiApp(el) { document.querySelectorAll('.upi-apps .upi-app').forEach(e => e.classList.remove('selected')); el.classList.add('selected'); }
+function selectWallet(el) { document.querySelectorAll('.wallet-opt').forEach(e => e.classList.remove('selected')); el.classList.add('selected'); }
+function selectBank(el) { document.querySelectorAll('#bankList .wallet-opt').forEach(e => e.classList.remove('selected')); el.classList.add('selected'); }
+
+function formatCard(inp) {
+  let v = inp.value.replace(/\D/g,'').substring(0,16);
+  inp.value = v.replace(/(.{4})/g,'$1 ').trim();
+  const preview = v.padEnd(16,'•').replace(/(.{4})/g,'$1 ').trim();
+  document.getElementById('cardNumPreview').textContent = preview || '•••• •••• •••• ••••';
+}
+function formatExp(inp) {
+  let v = inp.value.replace(/\D/g,'');
+  if (v.length >= 2) v = v.substring(0,2)+'/'+v.substring(2,4);
+  inp.value = v;
+  document.getElementById('cardExpPreview').textContent = inp.value || 'MM/YY';
+}
+
+function processPayment() {
+  const btn = document.getElementById('payNowBtn');
+  btn.textContent = '⏳ Processing...';
+  btn.disabled = true;
+  setTimeout(() => {
+    btn.textContent = '✅ Payment Successful!';
+    saveBooking();
+    setTimeout(showSuccessModal, 400);
+  }, 2200);
+}
+
+function saveBooking() {
+  const user = DB.getCurrentUser();
+  const bookingId = 'BK'+Date.now().toString().slice(-6);
+  const booking = {
+    id: bookingId,
+    userId: user ? user.id : 'guest',
+    slot: bookingData.slot,
+    vehicle: bookingData.vehicle,
+    duration: bookingData.duration,
+    price: bookingData.price,
+    gst: bookingData.gst,
+    total: bookingData.total,
+    status: 'Active',
+    time: new Date().toLocaleTimeString('en-IN', {hour:'2-digit',minute:'2-digit'}),
+    date: new Date().toLocaleDateString('en-IN')
+  };
+  DB.addBooking(booking);
+  // Show in modal
+  document.getElementById('t-id').textContent = bookingId;
+  document.getElementById('t-slot').textContent = booking.slot;
+  document.getElementById('t-dur').textContent = booking.duration + 'h';
+  document.getElementById('t-amt').textContent = '₹'+booking.total;
+}
+
+function showSuccessModal() {
+  document.getElementById('successModal').classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('successModal').classList.remove('active');
+  document.getElementById('payNowBtn').textContent = 'Pay Now →';
+  document.getElementById('payNowBtn').disabled = false;
+  showPage('userdash');
+}
+
+// ════════════════════════════════════════
+// USER DASHBOARD
+// ════════════════════════════════════════
+function loadUserDashboard() {
+  const user = DB.getCurrentUser();
+  if (!user) { showPage('auth'); return; }
+  document.getElementById('dashWelcome').textContent = 'Welcome, ' + user.firstName + ' 👋';
+  document.getElementById('dashAvatar').textContent = user.firstName[0];
+  document.getElementById('dashName').textContent = user.firstName + ' ' + (user.lastName||'');
+  document.getElementById('dashEmail').textContent = user.email;
+  document.getElementById('dashPhone').textContent = user.phone;
+  document.getElementById('dashVehicle').textContent = user.vehicle;
+  document.getElementById('dashSince').textContent = user.joinDate;
+
+  const bookings = DB.getUserBookings(user.id);
+  const totalSpent = bookings.reduce((s,b) => s+b.total, 0);
+  const active = bookings.filter(b => b.status==='Active').length;
+
+  document.getElementById('dashTotalBookings').textContent = bookings.length;
+  document.getElementById('dashActive').textContent = active;
+  document.getElementById('dashSpent').textContent = '₹'+totalSpent;
+
+  const tbody = document.getElementById('bookingsTbody');
+  if (bookings.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:2rem;">No bookings yet. <span style="color:var(--cyan);cursor:pointer;" onclick="showPage(\'booking\')">Book your first slot →</span></td></tr>';
+  } else {
+    tbody.innerHTML = bookings.slice().reverse().map(b => `
+      <tr>
+        <td style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--cyan)">${b.id}</td>
+        <td style="font-family:'JetBrains Mono',monospace">${b.slot}</td>
+        <td style="font-family:'JetBrains Mono',monospace">${b.vehicle}</td>
+        <td>${b.duration}h</td>
+        <td style="color:var(--green)">₹${b.total}</td>
+        <td><span class="status-badge status-${b.status.toLowerCase()}">${b.status}</span></td>
+      </tr>
+    `).join('');
+  }
+}
+
+// ════════════════════════════════════════
+// TOAST
+// ════════════════════════════════════════
+let toastTimer;
+function showToast(msg, type='success') {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.className = 'toast toast-'+type+' show';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+// ════════════════════════════════════════
+// MAIN PAGE INIT
+// ════════════════════════════════════════
+function animateCounter(el, target, suffix='', duration=1500) {
+  let start = 0;
+  const step = target / (duration / 16);
+  const timer = setInterval(() => {
+    start = Math.min(start + step, target);
+    el.textContent = Math.round(start).toLocaleString() + suffix;
+    if (start >= target) clearInterval(timer);
+  }, 16);
+}
+
+setTimeout(() => {
+  animateCounter(document.getElementById('cnt1'), 50000, '+');
+  animateCounter(document.getElementById('cnt2'), 42);
+  animateCounter(document.getElementById('cnt3'), 12000, '+');
+  let n = 0;
+  const ival = setInterval(() => { n++; document.getElementById('cnt4').textContent = n + '%'; if(n>=99) clearInterval(ival); }, 15);
+}, 800);
+
+// Parking grid
+const types = ['free','free','free','occupied','occupied','reserved','ev','disabled'];
+const grid = document.getElementById('parkingGrid');
+const spots = [];
+for (let i = 0; i < 64; i++) {
+  const t = types[Math.floor(Math.random() * types.length)];
+  const d = document.createElement('div');
+  d.className = 'pspot ' + t;
+  d.title = 'Slot B2-'+String(i+1).padStart(2,'0')+' · '+t;
+  grid.appendChild(d);
+  spots.push(d);
+}
+setInterval(() => {
+  const idx = Math.floor(Math.random() * 64);
+  const t = types[Math.floor(Math.random() * types.length)];
+  spots[idx].className = 'pspot ' + t;
+  const free = spots.filter(s => s.className.includes('free')).length;
+  const occ = spots.filter(s => s.className.includes('occupied')).length;
+  document.getElementById('freeCount').textContent = free;
+  document.getElementById('occCount').textContent = occ;
+  document.getElementById('freeBar').style.width = (free/64*100)+'%';
+}, 1200);
+
+// Prediction chart
+const predData = [65,72,80,88,92,85,78,70,60,55,50,48];
+const predChart = document.getElementById('predChart');
+predData.forEach((v,i) => {
+  const bar = document.createElement('div');
+  bar.style.cssText = `flex:1;background:${i<6?'rgba(0,245,212,0.5)':'rgba(124,58,237,0.4)'};border-radius:3px 3px 0 0;height:${v}%;`;
+  predChart.appendChild(bar);
+});
+
+// Detection log
+const plates = ['TN09AB1234','TN07CD5678','TN10EF9012','TN01GH3456','TN22IJ7890','KA03KL1122','AP16MN3344','MH12OP5566'];
+const statusTypes = [{cls:'det-in',label:'ENTRY'},{cls:'det-out',label:'EXIT'},{cls:'det-vip',label:'VIP'}];
+const logEl = document.getElementById('detectionLog');
+const camStatus = document.getElementById('camStatus');
+const camMessages = ['SCANNING...','VEHICLE DETECTED','READING PLATE...','PLATE MATCHED','SLOT ASSIGNED','GATE OPENED'];
+let msgIdx = 0;
+function addDetection() {
+  const plate = plates[Math.floor(Math.random()*plates.length)];
+  const st = statusTypes[Math.floor(Math.random()*statusTypes.length)];
+  const time = new Date().toTimeString().slice(0,8);
+  const entry = document.createElement('div');
+  entry.className = 'det-entry';
+  entry.style.opacity = '0';
+  entry.innerHTML = `<span class="det-plate">${plate}</span><span class="det-time">${time}</span><span class="det-status ${st.cls}">${st.label}</span>`;
+  logEl.insertBefore(entry, logEl.firstChild);
+  setTimeout(() => { entry.style.transition='all 0.3s'; entry.style.opacity='1'; }, 10);
+  if (logEl.children.length > 6) logEl.removeChild(logEl.lastChild);
+}
+for (let i = 0; i < 5; i++) setTimeout(addDetection, i*200);
+setInterval(addDetection, 3000);
+setInterval(() => { camStatus.textContent = camMessages[msgIdx%camMessages.length]; msgIdx++; }, 1000);
+
+// Car strip
+function makeCar(scale=1, colorH=200) {
+  return `<svg viewBox="0 0 200 70" xmlns="http://www.w3.org/2000/svg" style="width:${120*scale}px;flex-shrink:0;margin-right:30px;">
+    <ellipse cx="100" cy="62" rx="65" ry="5" fill="rgba(0,0,0,0.3)"/>
+    <rect x="15" y="35" width="170" height="27" rx="5" fill="hsl(${colorH},60%,12%)" stroke="rgba(0,245,212,0.2)" stroke-width="1"/>
+    <path d="M48 35 Q55 15 68 12 L132 12 Q145 15 152 35Z" fill="hsl(${colorH},60%,14%)" stroke="rgba(0,245,212,0.15)" stroke-width="1"/>
+    <path d="M55 34 Q60 18 68 14 L97 14 L97 34Z" fill="rgba(0,245,212,0.05)" stroke="rgba(0,245,212,0.2)" stroke-width="1"/>
+    <path d="M101 34 L101 14 L132 14 Q140 18 145 34Z" fill="rgba(0,245,212,0.05)" stroke="rgba(0,245,212,0.2)" stroke-width="1"/>
+    <ellipse cx="30" cy="48" rx="10" ry="5" fill="rgba(0,18,36,0.9)" stroke="rgba(0,245,212,0.5)" stroke-width="1"/>
+    <ellipse cx="30" cy="48" rx="4" ry="2" fill="rgba(0,245,212,0.5)"/>
+    <circle cx="47" cy="61" r="11" fill="#060e1a" stroke="rgba(0,245,212,0.35)" stroke-width="1.5"/>
+    <circle cx="47" cy="61" r="7" fill="#0b1827"/>
+    <circle cx="47" cy="61" r="3" fill="rgba(0,245,212,0.5)"/>
+    <circle cx="153" cy="61" r="11" fill="#060e1a" stroke="rgba(0,245,212,0.35)" stroke-width="1.5"/>
+    <circle cx="153" cy="61" r="7" fill="#0b1827"/>
+    <circle cx="153" cy="61" r="3" fill="rgba(0,245,212,0.5)"/>
+  </svg>`;
+}
+const t1 = document.getElementById('carTrack1');
+const t2 = document.getElementById('carTrack2');
+const carColors = [200, 220, 180, 260, 190, 210];
+for (let i = 0; i < 14; i++) {
+  t1.innerHTML += makeCar(1, carColors[i%carColors.length]);
+  t2.innerHTML += makeCar(0.8, carColors[(i+2)%carColors.length]);
+}
+
+// Scroll reveal
+const reveals = document.querySelectorAll('.reveal');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting){ e.target.classList.add('visible'); observer.unobserve(e.target); } });
+}, { threshold: 0.1 });
+reveals.forEach(el => observer.observe(el));
+
+// Init nav state
+const u = DB.getCurrentUser();
+if (u) updateNavUser(u);
+
+// Show main by default
+showPage('main');
+</script>
+</body>
+</html>
